@@ -10,7 +10,7 @@ Each household runs its **own** Home Assistant. Their devices, passwords and cal
 1. Install Home Assistant ([install.md §1](install.md#1-home-assistant-on-proxmox), or the official guide for a Pi).
 2. HACS + Catppuccin + Tailscale ([install.md §2](install.md#2-hacs-theme-tailscale)). Tailscale is optional. Without it the dashboard works at home only.
 3. Add **their** devices from [integrations.md](integrations.md), signing in with **their** accounts. Skip anything they don't own; the dashboard simply won't show it.
-4. Add-on Store → Repositories → `https://github.com/darionb85/home-dashboard` → install **Home Dashboard** → Start → **Dashboard setup → Build dashboard**.
+4. Settings → **Apps** → **App store** → ⋮ → Repositories → `https://github.com/darionb85/home-dashboard` → install **Home Dashboard** → Start → **Dashboard setup → Build dashboard**.
 5. Optional: their own GitHub token for the Copilot row, or set `ai_usage=-` in *entity_overrides* to hide AI usage.
 
 ## Logins in their house

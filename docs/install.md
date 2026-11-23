@@ -2,6 +2,8 @@
 
 About 30–45 minutes, plus device setup.
 
+> **Naming:** since Home Assistant 2026.2, *add-ons* are called **Apps** (Settings → Apps → App store). Same thing; older guides still say add-ons.
+
 ## 1. Home Assistant on Proxmox
 
 1. Open the **Proxmox host shell** (Datacenter → your node → Shell) and run the community Home Assistant OS VM script:
@@ -17,10 +19,10 @@ About 30–45 minutes, plus device setup.
 
 **Turn on Advanced mode:** click your name (bottom left) → *Advanced mode* on.
 
-**File editor:** Settings → Add-ons → Add-on Store → **File editor** → Install → Start → *Show in sidebar*.
+**File editor:** Settings → **Apps** → **App store** → **File editor** → Install → Start → *Show in sidebar*.
 
 **HACS** (the community store; needed for Sensi, EcoFlow, Vivosun, GL.iNet and Catppuccin). Follow <https://hacs.xyz/docs/use/download/download/>. Summary:
-1. Add-on Store → ⋮ → Repositories → add `https://github.com/hacs/addons` → install **Get HACS** → Start → read its log.
+1. Settings → **Apps** → **App store** → ⋮ → Repositories → add `https://github.com/hacs/addons` → install **Get HACS** → Start → read its log.
 2. Restart Home Assistant (Settings → System → ⏻).
 3. Settings → Devices & services → **Add integration** → *HACS* → tick the boxes → approve the GitHub device code it shows.
 
@@ -34,7 +36,7 @@ Save, then restart.
 **Catppuccin:** HACS → search *Catppuccin* → Download. Developer tools → Actions → run `frontend.reload_themes`. The dashboard sets the theme itself. To also theme the sidebar, pick it in your profile → *Theme*.
 
 **Tailscale** (phone access away from home, no open ports):
-1. Add-on Store → **Tailscale** → Install → Start → *Open web UI* → log in to your tailnet.
+1. Settings → **Apps** → **App store** → **Tailscale** → Install → Start → *Open web UI* → log in to your tailnet.
 2. In the Tailscale admin console, note the machine name (usually `homeassistant`). From your phone with Tailscale on:
    - Dashboard: `http://homeassistant.<tailnet>.ts.net:8123`
    - AI usage PWA: `http://homeassistant.<tailnet>.ts.net:8787/?token=<read token>`
@@ -47,8 +49,8 @@ Go through [integrations.md](integrations.md). Do the easy ones first. You don't
 ## 4. Home Dashboard add-on
 
 1. **Make the repo installable.** Home Assistant can only install add-ons from a *public* Git URL. The repo contains no secrets, so the easy path is GitHub → `darionb85/home-dashboard` → Settings → *Change visibility → Public*.
-   *Want it private?* Install the **Samba share** add-on instead, copy the `home_dashboard` folder into the `addons` share, then Add-on Store → ⋮ → *Check for updates*. It appears under **Local add-ons**.
-2. Add-on Store → ⋮ → **Repositories** → add `https://github.com/darionb85/home-dashboard` → find **Home Dashboard** → Install. The first build takes a minute or two.
+   *Want it private?* Install the **Samba share** add-on instead, copy the `home_dashboard` folder into the `addons` share, then Settings → Apps → App store → ⋮ → *Check for updates*. It appears under **Local apps**.
+2. Settings → **Apps** → **App store** → ⋮ → **Repositories** → add `https://github.com/darionb85/home-dashboard` → find **Home Dashboard** → Install. The first build takes a minute or two.
 3. **Configuration** tab:
    - `github_username`: `darionb85`
    - `github_pat`: your fine-grained token (see below)
@@ -73,4 +75,4 @@ On **Dashboard setup**, type the % used and reset time for Claude, ChatGPT, Gemi
 
 ## Updating
 
-When the repo changes, open the Add-on Store → ⋮ → *Check for updates* → Update. Your options, tokens and AI rows are kept.
+When the repo changes, open Settings → Apps → App store → ⋮ → *Check for updates* → Update. Your options, tokens and AI rows are kept.
