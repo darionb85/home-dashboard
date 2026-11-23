@@ -39,7 +39,7 @@ Marketplace → search **Sensi** (`iprak/sensi`) → Download → restart.
 
 Sensi's login uses a captcha, so the integration needs a **refresh token** you copy once from your browser:
 1. Desktop Chrome/Edge → go to `manager.sensicomfort.com` → press **F12** → **Network** tab.
-2. Log in normally.
+2. Log in normally. `manager.sensicomfort.com` is Sensi's paid *Multiple Thermostat Manager* site, so after login it will ask you to start a trial or pay. **Ignore that and don't enter a card.** The token is already in the Network tab at that point; you only use the login.
 3. In the Network list, click the request starting with `token?device=` (if two, the one with a Response) → **Response** → copy the `refresh_token` value.
 4. *Add integration → Sensi* → paste it.
 
