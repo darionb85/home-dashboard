@@ -6,7 +6,7 @@ A clean, local-only home dashboard built on **Home Assistant**. It covers calend
 Proxmox ──► Home Assistant OS (VM)
               ├─ integrations: Google Calendar, Sensi, EcoFlow, Tesla, TP-Link/Tapo,
               │                Ring, Blink, Vivosun, GL.iNet
-              ├─ Catppuccin theme (HACS)
+              ├─ Catppuccin theme (Marketplace)
               ├─ Tailscale add-on  ─► reach it from your phone anywhere
               └─ Home Dashboard add-on (this repo)
                    ├─ "Dashboard setup" page: finds devices → builds the Home dashboard
@@ -18,7 +18,7 @@ Proxmox ──► Home Assistant OS (VM)
 | # | Step | Guide |
 |---|---|---|
 | 1 | Create the Home Assistant VM on Proxmox | [docs/install.md](docs/install.md#1-home-assistant-on-proxmox) |
-| 2 | Install HACS, the Catppuccin theme and Tailscale | [docs/install.md](docs/install.md#2-hacs-theme-tailscale) |
+| 2 | Open the Marketplace (built-in HACS), install the Catppuccin theme and Tailscale | [docs/install.md](docs/install.md#2-marketplace-theme-tailscale) |
 | 3 | Add your devices, easiest first | [docs/integrations.md](docs/integrations.md) |
 | 4 | Install this add-on, paste your GitHub token, press **Build dashboard** | [docs/install.md](docs/install.md#4-home-dashboard-add-on) |
 | 5 | Phone widgets | [Scriptable](widgets/scriptable/ai-usage.js) · [KWGT](widgets/kwgt/SETUP.md) |
@@ -30,14 +30,14 @@ Adding a device later? Open **Dashboard setup** → **Build dashboard** again an
 | Widget | Source | State |
 |---|---|---|
 | Calendar, weather | Google Calendar, Met.no (built in) | ✅ today |
-| Thermostat (Sensi 1F86U-42WF) | `iprak/sensi` (HACS, unofficial) | ✅ today |
-| Network (GL.iNet Flint 3 / BE9300) | `glinet_router` (HACS, local) | ✅ today |
+| Thermostat (Sensi 1F86U-42WF) | `iprak/sensi` (Marketplace, unofficial) | ✅ today |
+| Network (GL.iNet Flint 3 / BE9300) | `glinet_router` (Marketplace, local) | ✅ today |
 | Cameras: Tapo C211/C110/C101, Ring Doorbell 2 | TP-Link (built in) / Tapo Control, Ring (built in) | ✅ live |
 | Cameras: Blink | Blink (built in) | ✅ snapshots only (no live view in HA) |
 | Smart plugs: Tapo P125M, Kasa EP10 | TP-Link (built in) | ✅ today |
 | Tesla Wall Connector | Tesla Wall Connector (built in, local) | ✅ today |
-| EcoFlow Delta 3 Ultra Plus | EcoFlow Cloud (HACS), Bluetooth as backup | ⚠️ best effort |
-| Vivosun GrowHub E42A | `vivosun_growhub` (HACS, unofficial) | ✅ today |
+| EcoFlow Delta 3 Ultra Plus | EcoFlow Cloud (Marketplace), Bluetooth as backup | ⚠️ best effort |
+| Vivosun GrowHub E42A | `vivosun_growhub` (Marketplace, unofficial) | ✅ today |
 | AI usage | this add-on: Copilot live; Claude/ChatGPT/Gemini/Grok entered by hand | ✅ today |
 | Tesla solar + car | Tesla Fleet | 🕒 next build: [docs/tesla-fleet.md](docs/tesla-fleet.md) |
 | iCloud Reminders/Notes | iOS Shortcut → HA | 🕒 later: [docs/icloud-shortcut.md](docs/icloud-shortcut.md) |

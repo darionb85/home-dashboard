@@ -15,16 +15,15 @@ About 30–45 minutes, plus device setup.
 3. When it boots, find the VM's IP (VM → Summary). On the **Flint 3** admin page (192.168.8.1 → Clients), give that IP a **static/reserved address** so it never moves.
 4. Browse to `http://<vm-ip>:8123` and create your owner account. Each person in the house gets their own login later (Settings → People → Add person → *Allow login*). Everyone signs in with a username or email and password of their own.
 
-## 2. HACS, theme, Tailscale
+## 2. Marketplace, theme, Tailscale
 
 **Turn on Advanced mode:** click your name (bottom left) → *Advanced mode* on.
 
 **File editor:** Settings → **Apps** → **App store** → **File editor** → Install → Start → *Show in sidebar*.
 
-**HACS** (the community store; needed for Sensi, EcoFlow, Vivosun, GL.iNet and Catppuccin). Follow <https://hacs.xyz/docs/use/download/download/>. Summary:
-1. Settings → **Apps** → **App store** → ⋮ → Repositories → add `https://github.com/hacs/addons` → install **Get HACS** → Start → read its log.
-2. Restart Home Assistant (Settings → System → ⏻).
-3. Settings → Devices & services → **Add integration** → *HACS* → tick the boxes → approve the GitHub device code it shows.
+**Marketplace** (community store, formerly HACS; needed for Sensi, EcoFlow, Vivosun, GL.iNet and Catppuccin). Since Home Assistant 2026.11, HACS is built in as **Settings → Marketplace**, so there's nothing to install. Open it once and **accept the warning**; nothing installs until you do. Don't use the old *Get HACS* app or the *HACS* integration; they're blocked on 2026.11+. If you already installed *Get HACS*, uninstall it.
+
+> On Home Assistant older than 2026.11, use classic HACS instead: <https://hacs.xyz/docs/use/download/download/>.
 
 **Themes folder.** In File editor, open `configuration.yaml` and add at the bottom:
 ```yaml
@@ -33,7 +32,7 @@ frontend:
 ```
 Save, then restart.
 
-**Catppuccin:** HACS → search *Catppuccin* → Download. Developer tools → Actions → run `frontend.reload_themes`. The dashboard sets the theme itself. To also theme the sidebar, pick it in your profile → *Theme*.
+**Catppuccin:** Marketplace → search *Catppuccin* → Download. Developer tools → Actions → run `frontend.reload_themes`. The dashboard sets the theme itself. To also theme the sidebar, pick it in your profile → *Theme*.
 
 **Tailscale** (phone access away from home, no open ports):
 1. Settings → **Apps** → **App store** → **Tailscale** → Install → Start → *Open web UI* → log in to your tailnet.

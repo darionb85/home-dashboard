@@ -6,7 +6,7 @@ Three layers, each swappable on its own:
 |---|---|---|
 | **Widgets** | What each device shows (cards + which entities) | `home_dashboard/app/dashboard/widgets/*.yaml` |
 | **Template** | Which widgets go in which section, view type, column count, theme name | `…/dashboard/templates/*.yaml` or `/share/home_dashboard/templates/*.yaml` |
-| **Theme** | Colors/fonts (e.g. Catppuccin) | installed via HACS or `/config/themes/` |
+| **Theme** | Colors/fonts (e.g. Catppuccin) | installed via Marketplace or `/config/themes/` |
 
 Switching looks never touches widgets or device setup.
 
@@ -44,7 +44,7 @@ Available widgets: `weather, calendar, thermostat, ecoflow, tesla, cameras, grow
 
 Most shared HA dashboards are either **a theme** (colors only; Catppuccin is one) or **a full dashboard YAML**.
 - **Theme:** install it, then put its name in `theme:` of a template. Done.
-- **Full dashboard YAML:** send it to me, or copy its section order and card style into a template. If it relies on custom cards (Mushroom, bubble-card, etc.), install those from HACS and add a widget variant that uses them. Widgets are plain Lovelace cards with `{{placeholders}}`, so `widgets/thermostat.yaml` can become a `custom:mushroom-climate-card` in a few lines.
+- **Full dashboard YAML:** send it to me, or copy its section order and card style into a template. If it relies on custom cards (Mushroom, bubble-card, etc.), install those from the Marketplace and add a widget variant that uses them. Widgets are plain Lovelace cards with `{{placeholders}}`, so `widgets/thermostat.yaml` can become a `custom:mushroom-climate-card` in a few lines.
 
 ## Widget file format (for edits)
 
