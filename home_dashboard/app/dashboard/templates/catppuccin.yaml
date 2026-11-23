@@ -1,0 +1,20 @@
+# Default look: Catppuccin theme (github.com/catppuccin/home-assistant)
+# "Auto Latte Mocha" follows your device: light = Latte, dark = Mocha.
+# Other names: "Catppuccin Mocha", "Catppuccin Macchiato", "Catppuccin Frappe", "Catppuccin Latte"
+title: Home
+theme: Catppuccin Auto Latte Mocha
+view_type: sections
+max_columns: 4
+sections:
+  - title: Today
+    widgets: [weather, calendar]
+  - title: Climate
+    widgets: [thermostat, grow]
+  - title: Energy
+    widgets: [ecoflow, tesla]
+  - title: Cameras
+    widgets: [cameras]
+  - title: Network & plugs
+    widgets: [network, plugs]
+  - title: AI usage
+    widgets: [ai_usage]

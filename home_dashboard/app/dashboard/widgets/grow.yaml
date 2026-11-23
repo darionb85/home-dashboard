@@ -1,0 +1,26 @@
+cards:
+  - _requires: [grow_temp]
+    type: tile
+    name: Tent temp
+    entity: "{{grow_temp}}"
+  - _requires: [grow_humidity]
+    type: tile
+    name: Humidity
+    entity: "{{grow_humidity}}"
+  - _requires: [grow_vpd]
+    type: tile
+    name: VPD
+    icon: mdi:water-percent-alert
+    entity: "{{grow_vpd}}"
+  - _requires: [grow_light]
+    type: tile
+    name: Grow light
+    entity: "{{grow_light}}"
+    features:
+      - type: light-brightness
+  - _repeat: {over: grow_fans, as: fan}
+    _requires: [grow_fans]
+    type: tile
+    entity: "{{fan}}"
+    features:
+      - type: fan-speed

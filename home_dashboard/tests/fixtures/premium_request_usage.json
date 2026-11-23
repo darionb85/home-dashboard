@@ -1,0 +1,9 @@
+{
+  "timePeriod": {"year": 2026, "month": 11},
+  "user": "darionb85",
+  "usageItems": [
+    {"product": "Copilot", "sku": "Copilot Premium Request", "model": "GPT-5", "unitType": "requests",
+     "pricePerUnit": 0.04, "grossQuantity": 150, "grossAmount": 6, "discountQuantity": 150,
+     "discountAmount": 6, "netQuantity": 0, "netAmount": 0}
+  ]
+}

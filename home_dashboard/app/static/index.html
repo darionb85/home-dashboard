@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>AI Usage</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<header>
+  <h1>AI usage</h1>
+  <button id="refresh" class="primary">Refresh</button>
+</header>
+<div id="rows"></div>
+<p id="status" class="muted"></p>
+<script src="rows.js"></script>
+<script>
+// Token comes from ?token=… once, then is remembered on this device.
+let token = new URLSearchParams(location.search).get("token") || "";
+try {
+  if (token) localStorage.setItem("ai_usage_token", token);
+  else token = localStorage.getItem("ai_usage_token") || "";
+} catch (_) {}
+if (token && location.search) history.replaceState(null, "", location.pathname); // keep it out of history
+
+const statusEl = document.getElementById("status");
+const rowsEl = document.getElementById("rows");
+const btn = document.getElementById("refresh");
+
+async function call(method, path) {
+  const r = await fetch(path, {method, headers: {Authorization: `Bearer ${token}`}, cache: "no-store"});
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(body.error || r.status), {body, status: r.status});
+  return body;
+}
+function show(data) {
+  renderRows(rowsEl, data.rows);
+  statusEl.className = "muted";
+  statusEl.textContent = `Updated ${new Date(data.generated_at).toLocaleTimeString()}`;
+}
+async function load() {
+  if (!token) { statusEl.textContent = "Open this page once with ?token=YOUR_READ_TOKEN."; return; }
+  try { show(await call("GET", "usage.json")); }
+  catch (e) { statusEl.className = "err"; statusEl.textContent = e.status === 401 ? "Token rejected." : "Could not reach the server."; }
+}
+btn.onclick = async () => {
+  btn.disabled = true;
+  try { show(await call("POST", "refresh")); }
+  catch (e) {
+    statusEl.className = "err";
+    statusEl.textContent = e.status === 429 ? `Try again in ${e.body.retry_after}s.` : "Refresh failed.";
+  } finally { setTimeout(() => (btn.disabled = false), 2000); }
+};
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+load();
+setInterval(load, 5 * 60 * 1000);
+</script>
+</body>
+</html>

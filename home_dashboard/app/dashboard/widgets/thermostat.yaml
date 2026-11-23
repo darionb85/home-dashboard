@@ -1,0 +1,6 @@
+requires: [thermostat]
+cards:
+  - type: thermostat
+    entity: "{{thermostat}}"
+    features:
+      - type: climate-hvac-modes

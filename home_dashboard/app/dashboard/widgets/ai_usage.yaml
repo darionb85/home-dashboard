@@ -1,0 +1,17 @@
+requires: [ai_usage]
+cards:
+  - _repeat: {over: ai_usage, as: ai}
+    type: gauge
+    entity: "{{ai}}"
+    min: 0
+    max: 100
+    needle: false
+    severity: {green: 0, yellow: 60, red: 85}
+  - _requires: [addon_ingress]
+    type: button
+    name: Refresh / edit AI usage
+    icon: mdi:refresh
+    show_state: false
+    tap_action:
+      action: navigate
+      navigation_path: "{{addon_ingress}}"

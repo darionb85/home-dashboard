@@ -1,0 +1,15 @@
+{
+  "timePeriod": {"year": 2026, "month": 11},
+  "user": "darionb85",
+  "usageItems": [
+    {"product": "Copilot AI Credits", "sku": "AI Credit", "model": "GPT-5", "unitType": "ai-credits",
+     "pricePerUnit": 0.01, "grossQuantity": 70, "grossAmount": 0.7, "discountQuantity": 70,
+     "discountAmount": 0.7, "netQuantity": 0, "netAmount": 0},
+    {"product": "Copilot AI Credits", "sku": "AI Credit", "model": "Claude Sonnet", "unitType": "ai-credits",
+     "pricePerUnit": 0.01, "grossQuantity": 30, "grossAmount": 0.3, "discountQuantity": 30,
+     "discountAmount": 0.3, "netQuantity": 0, "netAmount": 0},
+    {"product": "Actions", "sku": "Linux minutes", "model": "", "unitType": "minutes",
+     "pricePerUnit": 0.008, "grossQuantity": 999, "grossAmount": 7.99, "discountQuantity": 999,
+     "discountAmount": 7.99, "netQuantity": 0, "netAmount": 0}
+  ]
+}

@@ -1,0 +1,16 @@
+# Example second look: stock HA theme, classic masonry columns, cameras first.
+# Copy this file to make your own (see docs/templates.md).
+title: Home
+theme: default
+view_type: masonry
+sections:
+  - title: Cameras
+    widgets: [cameras]
+  - title: Today
+    widgets: [weather, calendar]
+  - title: Home
+    widgets: [thermostat, ecoflow, tesla, grow]
+  - title: Network
+    widgets: [network, plugs]
+  - title: AI
+    widgets: [ai_usage]

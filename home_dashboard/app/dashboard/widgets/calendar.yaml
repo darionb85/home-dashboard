@@ -1,0 +1,5 @@
+requires: [calendars]
+cards:
+  - type: calendar
+    initial_view: listWeek
+    entities: "{{calendars}}"

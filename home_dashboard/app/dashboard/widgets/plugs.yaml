@@ -1,0 +1,7 @@
+requires: [plugs]
+cards:
+  - _repeat: {over: plugs, as: plug}
+    type: tile
+    entity: "{{plug}}"
+    vertical: false
+    tap_action: {action: toggle}

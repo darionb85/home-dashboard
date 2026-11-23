@@ -1,0 +1,21 @@
+cards:
+  - _requires: [net_wan]
+    type: tile
+    name: Internet
+    icon: mdi:web
+    entity: "{{net_wan}}"
+  - _requires: [net_down]
+    type: tile
+    name: Download
+    icon: mdi:download-network
+    entity: "{{net_down}}"
+  - _requires: [net_up]
+    type: tile
+    name: Upload
+    icon: mdi:upload-network
+    entity: "{{net_up}}"
+  - _requires: [net_clients]
+    type: tile
+    name: Devices online
+    icon: mdi:devices
+    entity: "{{net_clients}}"

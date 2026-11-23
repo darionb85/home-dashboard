@@ -1,0 +1,39 @@
+name: Home Dashboard
+version: "0.1.0"
+slug: home_dashboard
+description: One-click dashboard builder + AI usage service (usage.json for phone widgets)
+url: https://github.com/darionb85/home-dashboard
+arch: [amd64, aarch64]
+init: false
+startup: application
+boot: auto
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:view-dashboard-edit
+panel_title: Dashboard setup
+homeassistant_api: true
+hassio_api: true
+map:
+  - type: share
+    read_only: true
+ports:
+  8787/tcp: 8787
+ports_description:
+  8787/tcp: AI usage JSON + PWA for phone widgets (needs read token)
+options:
+  github_username: ""
+  github_pat: ""
+  copilot_allowance: 200
+  refresh_minutes: 30
+  template: catppuccin
+  auto_build: true
+  entity_overrides: []
+schema:
+  github_username: str
+  github_pat: password
+  copilot_allowance: int(1,1000000)
+  refresh_minutes: int(5,1440)
+  template: str
+  auto_build: bool
+  entity_overrides:
+    - str

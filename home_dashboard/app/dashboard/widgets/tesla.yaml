@@ -1,0 +1,36 @@
+# Wall Connector works today (local). Solar/home/car appear once Tesla Fleet is set up.
+cards:
+  - _requires: [solar_power]
+    type: tile
+    name: Solar
+    icon: mdi:solar-power-variant
+    entity: "{{solar_power}}"
+  - _requires: [home_usage]
+    type: tile
+    name: Home usage
+    icon: mdi:home-lightning-bolt
+    entity: "{{home_usage}}"
+  - _requires: [wall_connector_power]
+    type: tile
+    name: Charger
+    icon: mdi:ev-station
+    entity: "{{wall_connector_power}}"
+  - _requires: [wall_connector_state]
+    type: tile
+    name: Charger status
+    entity: "{{wall_connector_state}}"
+  - _requires: [wall_connector_session]
+    type: tile
+    name: This session
+    entity: "{{wall_connector_session}}"
+  - _requires: [car_battery]
+    type: gauge
+    name: Car
+    entity: "{{car_battery}}"
+    min: 0
+    max: 100
+    severity: {green: 50, yellow: 20, red: 0}
+  - _requires: [car_range]
+    type: tile
+    name: Range
+    entity: "{{car_range}}"

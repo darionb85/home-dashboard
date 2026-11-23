@@ -1,0 +1,155 @@
+# How the builder finds each device's entities.
+#   domain     entity domain (sensor, climate, camera...)
+#   platforms  integration names from the entity registry (most reliable)
+#   hints      substrings used instead when registry info isn't available
+#   match      regexes the entity_id must match (any)
+#   exclude    regexes that rule an entity out
+#   multiple   collect a list instead of a single entity
+# Anything wrong? Override per key in the add-on options, e.g.
+#   thermostat=climate.hallway     or     plugs=-   (hide the widget)
+
+weather:
+  domain: weather
+
+calendars:
+  domain: calendar
+  multiple: true
+  exclude: ["holiday", "birthdays"]
+
+thermostat:
+  domain: climate
+  platforms: [sensi, homekit_controller, smartthings]
+  hints: [sensi, thermostat]
+
+# --- cameras: Tapo (TP-Link or Tapo Control), Ring, Blink, Vivosun GrowCam
+cameras:
+  domain: camera
+  multiple: true
+  exclude: ["_sd$", "_sd_stream", "last_recording", "_minor", "snapshot"]
+
+# --- EcoFlow Delta 3 Ultra Plus
+ecoflow_battery:
+  domain: sensor
+  platforms: [ecoflow_cloud, ecoflow_api, ef_ble]
+  hints: [ecoflow, delta_3]
+  match: ["main_battery_level", "battery_level$", "_soc$"]
+  exclude: ["extra", "slave"]
+ecoflow_in:
+  domain: sensor
+  platforms: [ecoflow_cloud, ecoflow_api, ef_ble]
+  hints: [ecoflow, delta_3]
+  match: ["total_in_power", "input_power$", "_in_power$"]
+ecoflow_out:
+  domain: sensor
+  platforms: [ecoflow_cloud, ecoflow_api, ef_ble]
+  hints: [ecoflow, delta_3]
+  match: ["total_out_power", "output_power$", "_out_power$"]
+ecoflow_remaining:
+  domain: sensor
+  platforms: [ecoflow_cloud, ecoflow_api, ef_ble]
+  hints: [ecoflow, delta_3]
+  match: ["remain.*time", "time_remaining", "discharge_remaining"]
+
+# --- Tesla: Wall Connector (local, today) + Fleet (solar/car, later)
+wall_connector_power:
+  domain: sensor
+  platforms: [tesla_wall_connector, tesla_fleet, teslemetry]
+  hints: [wall_connector]
+  match: ["wall_connector.*power"]
+wall_connector_state:
+  domain: sensor
+  platforms: [tesla_wall_connector]
+  hints: [wall_connector]
+  match: ["status$", "state$"]
+wall_connector_session:
+  domain: sensor
+  platforms: [tesla_wall_connector]
+  hints: [wall_connector]
+  match: ["session_energy", "energy$"]
+solar_power:
+  domain: sensor
+  platforms: [tesla_fleet, teslemetry, tessie]
+  hints: [solar]
+  match: ["solar_power"]
+home_usage:
+  domain: sensor
+  platforms: [tesla_fleet, teslemetry, tessie]
+  hints: [load_power, home_usage]
+  match: ["load_power", "home_usage"]
+car_battery:
+  domain: sensor
+  platforms: [tesla_fleet, teslemetry, tessie]
+  hints: [tesla]
+  match: ["battery_level$"]
+car_range:
+  domain: sensor
+  platforms: [tesla_fleet, teslemetry, tessie]
+  hints: [tesla]
+  match: ["battery_range$", "_range$"]
+
+# --- Vivosun GrowHub E42A
+grow_temp:
+  domain: sensor
+  platforms: [vivosun_growhub]
+  hints: [vivosun, growhub]
+  match: ["temperature"]
+  exclude: ["outside", "outdoor", "probe_2"]
+grow_humidity:
+  domain: sensor
+  platforms: [vivosun_growhub]
+  hints: [vivosun, growhub]
+  match: ["humidity"]
+  exclude: ["outside", "outdoor"]
+grow_vpd:
+  domain: sensor
+  platforms: [vivosun_growhub]
+  hints: [vivosun, growhub]
+  match: ["vpd"]
+  exclude: ["outside", "outdoor"]
+grow_light:
+  domain: light
+  platforms: [vivosun_growhub]
+  hints: [vivosun, growhub, aerolight]
+grow_fans:
+  domain: fan
+  platforms: [vivosun_growhub]
+  hints: [vivosun, growhub]
+  multiple: true
+
+# --- GL.iNet Flint 3 (BE9300)
+net_down:
+  domain: sensor
+  platforms: [glinet_router, glinet]
+  hints: [glinet, gl_be9300, flint]
+  match: ["download", "rx_rate", "rx_speed", "wan.*rx"]
+net_up:
+  domain: sensor
+  platforms: [glinet_router, glinet]
+  hints: [glinet, gl_be9300, flint]
+  match: ["upload", "tx_rate", "tx_speed", "wan.*tx"]
+net_clients:
+  domain: sensor
+  platforms: [glinet_router, glinet]
+  hints: [glinet, gl_be9300, flint]
+  match: ["client", "connected_devices"]
+net_wan:
+  domain: binary_sensor
+  platforms: [glinet_router, glinet]
+  hints: [glinet, gl_be9300, flint]
+  match: ["wan", "internet"]
+
+# --- Tapo P125M / Kasa EP10 smart plugs (outlet switches only)
+plugs:
+  domain: switch
+  platforms: [tplink, matter]
+  hints: [plug, ep10, p125]
+  multiple: true
+  exclude: ["privacy", "led", "auto_", "motion", "alarm", "tamper", "record",
+            "notification", "child_lock", "detection", "flip", "lens", "night",
+            "pan", "tilt", "auto_update"]
+
+# --- AI usage rows (pushed by this add-on)
+ai_usage:
+  domain: sensor
+  match: ["^sensor\\.ai_usage_"]
+  multiple: true

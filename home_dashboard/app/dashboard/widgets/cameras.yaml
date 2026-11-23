@@ -1,0 +1,8 @@
+requires: [cameras]
+cards:
+  - _repeat: {over: cameras, as: cam}
+    type: picture-entity
+    entity: "{{cam}}"
+    camera_view: auto
+    show_state: false
+    tap_action: {action: more-info}

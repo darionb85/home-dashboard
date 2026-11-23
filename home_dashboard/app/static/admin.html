@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Dashboard setup</title>
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<header>
+  <h1>Dashboard setup</h1>
+  <button id="refresh">Refresh usage</button>
+</header>
+
+<h2>1 · Build your dashboard</h2>
+<div class="card">
+  <p class="muted">Finds your devices and (re)creates the <b>Home</b> dashboard in the sidebar. Run it again after adding an integration or switching layout.</p>
+  <div class="edit">
+    <select id="template"></select>
+    <button id="build" class="primary">Build dashboard</button>
+    <a id="yaml" href="api/dashboard.yaml"><button type="button">Download YAML</button></a>
+  </div>
+  <p id="buildStatus" class="muted"></p>
+  <details><summary class="muted">What was found</summary><pre id="found" class="mono"></pre></details>
+</div>
+
+<h2>2 · AI usage</h2>
+<p id="copilotNote" class="muted"></p>
+<div id="rows"></div>
+
+<h2>3 · Phone widgets</h2>
+<div class="card">
+  <p class="muted">Use these on your phone (over Tailscale or at home). Don't share the write token.</p>
+  <p>Read token<br><code id="readTok"></code></p>
+  <p>Write token (for the future Mac job)<br><code id="writeTok"></code></p>
+  <p class="muted">PWA / widget URL: <code>http://&lt;HA address&gt;:8787/?token=&lt;read token&gt;</code></p>
+  <button id="rotate">Rotate tokens</button>
+</div>
+<p id="status" class="muted"></p>
+
+<script src="rows.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+async function api(method, path, body) {
+  const r = await fetch(path, {method, headers: {"Content-Type": "application/json"},
+    body: body ? JSON.stringify(body) : undefined, cache: "no-store"});
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(data.error || r.status), {data, status: r.status});
+  return data;
+}
+function editor(row) {
+  const box = el("div", "edit");
+  const pct = el("input"); pct.type = "number"; pct.min = 0; pct.step = 1; pct.placeholder = "% used";
+  if (row.pct_used != null) pct.value = row.pct_used;
+  const when = el("input"); when.type = "datetime-local";
+  if (row.resets_at) {
+    const d = new Date(row.resets_at); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    when.value = d.toISOString().slice(0, 16);
+  }
+  const save = el("button", "", "Save");
+  save.onclick = async () => {
+    try {
+      await api("POST", `api/rows/${row.service}`, {
+        pct_used: pct.value === "" ? null : Number(pct.value),
+        resets_at: when.value ? new Date(when.value).toISOString() : null });
+      await load();
+    } catch (e) { $("status").textContent = `Save failed: ${e.message}`; }
+  };
+  box.append(pct, when, save);
+  return box;
+}
+async function load() {
+  const s = await api("GET", "api/state");
+  renderRows($("rows"), s.rows, editor);
+  $("readTok").textContent = s.tokens.read;
+  $("writeTok").textContent = s.tokens.write;
+  $("copilotNote").textContent = s.copilot_configured ? "Copilot is live; the others you set by hand."
+    : "Copilot isn't set up yet: add github_username and github_pat in the add-on's Configuration tab.";
+  const sel = $("template");
+  if (!sel.options.length) for (const t of s.templates) sel.append(new Option(t, t, false, t === s.template));
+  if (s.last_build) {
+    $("buildStatus").textContent = `Last built ${new Date(s.last_build.at).toLocaleString()} with “${s.last_build.template}”` +
+      (s.last_build.pushed ? "." : " (not pushed).");
+    $("found").textContent = JSON.stringify(s.last_build.found, null, 2);
+  }
+}
+$("template").onchange = () => { $("yaml").href = `api/dashboard.yaml?template=${encodeURIComponent($("template").value)}`; };
+$("build").onclick = async () => {
+  $("build").disabled = true; $("buildStatus").textContent = "Building…";
+  try { await api("POST", "api/build", {template: $("template").value}); await load(); }
+  catch (e) { $("buildStatus").textContent = `Build failed: ${e.message}. Try “Download YAML” and paste it into a dashboard's raw editor.`; }
+  finally { $("build").disabled = false; }
+};
+$("refresh").onclick = async () => {
+  try { await api("POST", "api/refresh"); await load(); $("status").textContent = "Refreshed."; }
+  catch (e) { $("status").textContent = e.status === 429 ? `Wait ${e.data.retry_after}s.` : `Refresh failed: ${e.message}`; }
+};
+$("rotate").onclick = async () => {
+  if (!confirm("Rotate tokens? Phone widgets will need the new read token.")) return;
+  await api("POST", "api/tokens/rotate"); await load();
+};
+load().catch((e) => ($("status").textContent = `Could not load: ${e.message}`));
+</script>
+</body>
+</html>

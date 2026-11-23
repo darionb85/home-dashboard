@@ -1,0 +1,21 @@
+requires: [ecoflow_battery]
+cards:
+  - type: gauge
+    name: EcoFlow battery
+    entity: "{{ecoflow_battery}}"
+    min: 0
+    max: 100
+    needle: false
+    severity: {green: 50, yellow: 20, red: 0}
+  - _requires: [ecoflow_in]
+    type: tile
+    name: Charging
+    entity: "{{ecoflow_in}}"
+  - _requires: [ecoflow_out]
+    type: tile
+    name: Output
+    entity: "{{ecoflow_out}}"
+  - _requires: [ecoflow_remaining]
+    type: tile
+    name: Time left
+    entity: "{{ecoflow_remaining}}"

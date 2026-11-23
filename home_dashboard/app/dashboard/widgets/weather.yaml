@@ -1,0 +1,7 @@
+requires: [weather]
+cards:
+  - type: weather-forecast
+    entity: "{{weather}}"
+    forecast_type: daily
+    show_current: true
+    show_forecast: true
