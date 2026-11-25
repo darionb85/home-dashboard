@@ -1,7 +1,7 @@
 # Always-on Chromium for the AI Usage Bridge.
 # Works as a Portainer stack (Stacks → Add stack → Web editor) or with `docker compose up -d`.
 # No host folders or console needed: the bridge extension is synced into a Docker volume hourly.
-# Set CUSTOM_USER and PASSWORD in Portainer's "Environment variables" section (or a .env file).
+# Before deploying: replace CHANGE-ME on the PASSWORD line with your own password.
 # Open https://<docker-host-ip>:3001 to see the browser. LAN only: never port-forward it.
 services:
   # Keeps the AI Usage Bridge extension up to date: downloads it now and every hour.
@@ -42,8 +42,8 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=America/New_York
-      - CUSTOM_USER=${CUSTOM_USER:-dashboard}
-      - PASSWORD=${PASSWORD:?Set PASSWORD in the stack's environment variables}
+      - CUSTOM_USER=dashboard
+      - PASSWORD=CHANGE-ME          # ← replace CHANGE-ME with your own password before deploying
       - CHROME_CLI=--load-extension=/bridge chrome://extensions
     volumes:
       - chromium-config:/config      # browser profile = your logins; stays on this host

@@ -32,9 +32,7 @@ The Docker LXC script also installs **Portainer**, at `https://<lxc-ip>:9443`. D
 1. Portainer → **local** environment → **Stacks** → **+ Add stack**.
 2. Name: `ai-usage-browser`. Build method: **Web editor**.
 3. Paste the contents of [`browser/docker-compose.yml`](https://raw.githubusercontent.com/darionb85/home-dashboard/main/browser/docker-compose.yml) (open the link, select all, copy).
-4. Scroll down to **Environment variables** → **+ Add an environment variable** twice:
-   - `CUSTOM_USER` = `dashboard`
-   - `PASSWORD` = a long password you make up (save it in your password manager)
+4. In the editor, find the line `- PASSWORD=CHANGE-ME` and replace **CHANGE-ME** with your own password (letters, numbers, `- _ . ! @` only). Leave the **Environment variables** section empty.
 5. **Deploy the stack.** The first pull is about 1 GB, so allow a couple of minutes.
 6. Check **Containers**: `ai-usage-browser` and `…bridge-sync…` should both be **running**. bridge-sync keeps the extension up to date by checking GitHub hourly.
 
@@ -42,7 +40,7 @@ Something wrong? Click the container → **Logs**, and paste the last lines to m
 
 ## 3. Log in and connect (5 min)
 
-1. On any computer at home, open `https://<lxc-ip>:3001`. Accept the certificate warning (it's self-signed), then sign in as `dashboard` with the password you set in Portainer. A full Chromium desktop appears in the tab.
+1. On any computer at home, open `https://<lxc-ip>:3001`. Accept the certificate warning (it's self-signed), then sign in as `dashboard` with the password you put in the stack file. A full Chromium desktop appears in the tab.
 2. In **that** Chromium, log in to **claude.ai**, **chatgpt.com** and **gemini.google.com**. Tick "stay signed in" wherever it's offered.
 3. The browser opens on `chrome://extensions`. **AI Usage Bridge** should be listed. If it isn't: turn on **Developer mode** → **Load unpacked** → in the file picker press **Ctrl+L**, type `/bridge`, Enter → **Select**.
 4. Click the puzzle icon → pin **AI Usage Bridge** → click it:
