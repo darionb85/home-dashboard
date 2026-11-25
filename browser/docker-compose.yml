@@ -1,23 +1,46 @@
-# Always-on Chromium for the AI Usage Bridge (runs in a Proxmox LXC).
-# Open https://<lxc-ip>:3001 to see/log in to the browser. LAN only: never port-forward this.
+# Always-on Chromium for the AI Usage Bridge.
+# Works as a Portainer stack (Stacks → Add stack → Web editor) or with `docker compose up -d`.
+# No host folders or console needed: the bridge extension is downloaded into a Docker volume.
+# Set CUSTOM_USER and PASSWORD in Portainer's "Environment variables" section (or a .env file).
+# Open https://<docker-host-ip>:3001 to see the browser. LAN only: never port-forward it.
 services:
+  bridge-fetch:
+    image: alpine/git:latest
+    entrypoint:
+      - sh
+      - -c
+      - >
+        rm -rf /out/* &&
+        git clone -q --depth 1 https://github.com/darionb85/home-dashboard /tmp/r &&
+        cp -r /tmp/r/bridge/. /out/ &&
+        echo "bridge $(cat /out/manifest.json | grep '\"version\"') ready"
+    volumes:
+      - bridge:/out
+    restart: "no"
+
   chromium:
     image: lscr.io/linuxserver/chromium:latest
     container_name: ai-usage-browser
+    depends_on:
+      bridge-fetch:
+        condition: service_completed_successfully
     security_opt:
       - seccomp:unconfined
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=${TZ:-America/New_York}
-      - CUSTOM_USER=${CUSTOM_USER}
-      - PASSWORD=${PASSWORD}
-      # tries to auto-load the bridge; if it doesn't appear, load /bridge by hand (see docs)
+      - TZ=America/New_York
+      - CUSTOM_USER=${CUSTOM_USER:-dashboard}
+      - PASSWORD=${PASSWORD:?Set PASSWORD in the stack's environment variables}
       - CHROME_CLI=--load-extension=/bridge chrome://extensions
     volumes:
-      - ./config:/config                 # browser profile = your logins; keep private
-      - ./repo/bridge:/bridge:ro         # the AI Usage Bridge extension from this repo
+      - chromium-config:/config      # browser profile = your logins; stays on this host
+      - bridge:/bridge:ro
     ports:
-      - 3001:3001                        # HTTPS desktop (self-signed cert)
+      - 3001:3001                    # HTTPS desktop (self-signed cert)
     shm_size: "1gb"
     restart: unless-stopped
+
+volumes:
+  bridge:
+  chromium-config:

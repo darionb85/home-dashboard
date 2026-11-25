@@ -23,22 +23,28 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/Proxmo
 
 Then on the Flint 3, reserve the LXC's IP like you did for the HA VM.
 
-## 2. Install the browser (2 min)
+## 2. Install the browser in Portainer (3 min, no console needed)
 
-In the LXC's console (Proxmox → the CT → Console, log in as root):
-```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/darionb85/home-dashboard/main/browser/setup.sh)"
-```
-It installs Docker if needed, pulls this repo, creates a random password, and starts Chromium. At the end it prints the address. Get the password with:
-```bash
-cat /opt/ai-usage-browser/.env
-```
+The Docker LXC script also installs **Portainer**, at `https://<lxc-ip>:9443`. Do everything there.
+
+> Don't use the **portainer** container's console (Containers → portainer → `>_`). That image has no shell, so **Connect** never works there, and you don't need it.
+
+1. Portainer → **local** environment → **Stacks** → **+ Add stack**.
+2. Name: `ai-usage-browser`. Build method: **Web editor**.
+3. Paste the contents of [`browser/docker-compose.yml`](https://raw.githubusercontent.com/darionb85/home-dashboard/main/browser/docker-compose.yml) (open the link, select all, copy).
+4. Scroll down to **Environment variables** → **+ Add an environment variable** twice:
+   - `CUSTOM_USER` = `dashboard`
+   - `PASSWORD` = a long password you make up (save it in your password manager)
+5. **Deploy the stack.** The first pull is about 1 GB, so allow a couple of minutes.
+6. Check **Containers**: `ai-usage-browser` should be **running**. A `…bridge-fetch…` container showing **exited** is normal: it downloads the extension and stops.
+
+Something wrong? Click the container → **Logs**, and paste the last lines to me.
 
 ## 3. Log in and connect (5 min)
 
-1. On any computer at home, open `https://<lxc-ip>:3001`. Accept the certificate warning (it's self-signed), then sign in as user `dashboard` with the password from the `.env` file. A full Chromium desktop appears in the tab.
+1. On any computer at home, open `https://<lxc-ip>:3001`. Accept the certificate warning (it's self-signed), then sign in as `dashboard` with the password you set in Portainer. A full Chromium desktop appears in the tab.
 2. In **that** Chromium, log in to **claude.ai**, **chatgpt.com** and **gemini.google.com**. Tick "stay signed in" wherever it's offered.
-3. Go to `chrome://extensions`. **AI Usage Bridge** should already be listed. If it isn't: turn on **Developer mode** → **Load unpacked** → type `/bridge` in the path box → **Select**.
+3. The browser opens on `chrome://extensions`. **AI Usage Bridge** should be listed. If it isn't: turn on **Developer mode** → **Load unpacked** → in the file picker press **Ctrl+L**, type `/bridge`, Enter → **Select**.
 4. Click the puzzle icon → pin **AI Usage Bridge** → click it:
    - **Add-on address:** `http://<home-assistant-vm-ip>:8787`. Use the plain LAN IP, since Tailscale isn't needed inside your network.
    - **Write token:** from **Dashboard setup → Phone widgets → Write token**
@@ -52,15 +58,15 @@ If you turn off your own computer, nothing changes. If the Proxmox host reboots,
 | When | Do |
 |---|---|
 | A row shows **error: signed out** | Open `https://<lxc-ip>:3001` and log in to that site again. Google is the one most likely to ask now and then. |
-| I push a bridge update | Re-run the setup command from step 2, then in that Chromium go to `chrome://extensions` → AI Usage Bridge → ↻ reload. |
-| You want to view it away from home | Install Tailscale in the LXC (`curl -fsSL https://tailscale.com/install.sh \| sh && tailscale up`) and use its Tailscale IP. |
+| I push a bridge update | Portainer → Stacks → ai-usage-browser → **Update the stack** (tick *Re-pull image*), then in that Chromium go to `chrome://extensions` → AI Usage Bridge → ↻ reload. |
+| You want to view it away from home | Not needed for it to work. If you want it, install Tailscale on the LXC from the Proxmox CT console (Proxmox → the CT → **Console**, not Portainer). |
 
 ## Security
 
-- The browser profile in `/opt/ai-usage-browser/config` **is your logins**. It stays on your server and isn't in Git. Back up the LXC with Proxmox backups, not by copying that folder anywhere.
+- The browser profile (Docker volume `chromium-config`) **is your logins**. It stays on your server and isn't in Git. Back up the LXC with Proxmox backups, not by copying that folder anywhere.
 - Port 3001 has a password, but it's only meant for your LAN. **Never port-forward it**: the user/password setting only turns on basic HTTP auth, which linuxserver.io says is suitable only for a trusted local network.
 - The bridge sends only numbers to the add-on. Your cookies and tokens never leave that browser.
-- To retire it: `cd /opt/ai-usage-browser && docker compose down`, delete the CT, and sign out of the sites' "active sessions" lists if you like.
+- To retire it: Portainer → Stacks → ai-usage-browser → **Delete** (and remove its volumes), delete the CT, and sign out of the sites' "active sessions" lists if you like.
 
 ## Resources
 
