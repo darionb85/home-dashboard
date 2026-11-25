@@ -21,3 +21,6 @@ Builds your **Home** dashboard from the devices you've added, and serves AI-usag
 - `8787`: `/usage.json` and the AI-usage PWA. Needs the read token. Reach it on your LAN or over Tailscale only; don't forward it on your router.
 
 Full docs: <https://github.com/darionb85/home-dashboard>
+
+## Live Claude / ChatGPT
+Install the Chrome **AI Usage Bridge** (repo folder `bridge/`) and give it this add-on's **write token**. It POSTs numbers only to `:8787/ingest`. See `docs/ai-usage-live.md`.

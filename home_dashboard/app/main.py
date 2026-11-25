@@ -22,7 +22,7 @@ from aiohttp import web
 from . import builder
 from .copilot import CopilotError, error_row, fetch_copilot
 from .ha import HAClient, HAError
-from .schema import SERVICES, iso, mark_stale, utcnow
+from .schema import SERVICES, iso, make_row, mark_stale, utcnow
 from .store import Store
 
 log = logging.getLogger("home_dashboard")
@@ -62,6 +62,7 @@ class Service:
         self.refresh_lock = asyncio.Lock()
         self.last_refresh = 0.0
         self.last_build: dict = {}
+        self._ingest_seen: dict[str, float] = {}
         self.extra_template_dirs = [Path(os.environ.get("USER_TEMPLATES", "/share/home_dashboard/templates"))]
 
     # -- usage -------------------------------------------------------------
@@ -107,12 +108,36 @@ class Service:
                 "status": row["status"],
                 "link": row["link"],
                 "updated_at": row["updated_at"],
+                **{k: v for k, v in self.store.get_details(row["service"]).items() if k not in ("friendly_name",)},
             }
             state = row["pct_used"] if row["pct_used"] is not None else "unknown"
             try:
                 await self.ha.set_state(f"sensor.ai_usage_{row['service']}", state, attrs)
             except (HAError, aiohttp.ClientError, asyncio.TimeoutError) as exc:
                 log.warning("could not update HA sensor for %s: %s", row["service"], exc)
+
+    def ingest(self, body: dict) -> dict:
+        """Row pushed by the browser bridge (write token). Raises ValueError on bad input."""
+        if not isinstance(body, dict):
+            raise ValueError("body must be a JSON object")
+        service = body.get("service")
+        if service not in SERVICES or SERVICES[service]["live"]:
+            raise ValueError("unknown or server-side service")
+        now = time.monotonic()
+        last = self._ingest_seen.get(service, 0.0)
+        if now - last < INGEST_MIN_SECONDS:
+            raise RateLimited(int(INGEST_MIN_SECONDS - (now - last)) + 1)
+        self._ingest_seen[service] = now
+        details = clean_details(body.get("details"))
+        prev = self.store.get_row(service) or {}
+        if body.get("error"):
+            details["error"] = str(body["error"])[:120]
+            row = make_row(service, pct_used=prev.get("pct_used"), resets_at=prev.get("resets_at"), status="error")
+        else:
+            row = make_row(service, pct_used=body.get("pct_used"), resets_at=body.get("resets_at"), status="ok")
+        self.store.put_row(row)
+        self.store.put_details(service, details)
+        return row
 
     async def scheduler(self) -> None:
         while True:
@@ -160,6 +185,28 @@ class Service:
 # ------------------------------------------------------------------------
 # helpers
 # ------------------------------------------------------------------------
+INGEST_MIN_SECONDS = 10
+
+
+class RateLimited(Exception):
+    def __init__(self, retry_after: int):
+        super().__init__(f"retry in {retry_after}s")
+        self.retry_after = retry_after
+
+
+def clean_details(raw) -> dict:
+    """Only small scalar extras (e.g. weekly %, plan) reach HA attributes."""
+    out = {}
+    if not isinstance(raw, dict):
+        return out
+    for k, v in list(raw.items())[:12]:
+        if not isinstance(k, str) or not k.replace("_", "").isalnum() or len(k) > 40:
+            continue
+        if isinstance(v, bool) or v is None or isinstance(v, (int, float)):
+            out[k] = v
+        elif isinstance(v, str):
+            out[k] = v[:100]
+    return out
 def _token_ok(request: web.Request, expected: str) -> bool:
     given = request.query.get("token", "")
     auth = request.headers.get("Authorization", "")
@@ -216,7 +263,20 @@ def make_public_app(svc: Service) -> web.Application:
 
     app.router.add_get("/", _static("index.html"))
     app.router.add_get("/usage.json", usage)
+    async def ingest(request):
+        if not _token_ok(request, svc.store.tokens["write"]):
+            return _json({"error": "unauthorized"}, 401)
+        try:
+            row = svc.ingest(await request.json())
+        except RateLimited as exc:
+            return _json({"error": "rate_limited", "retry_after": exc.retry_after}, 429)
+        except (ValueError, json.JSONDecodeError) as exc:
+            return _json({"error": str(exc)}, 400)
+        await svc.push_sensors()
+        return _json(row)
+
     app.router.add_post("/refresh", refresh)
+    app.router.add_post("/ingest", ingest)
     app.router.add_get("/manifest.webmanifest", _static("manifest.webmanifest", "application/manifest+json"))
     app.router.add_get("/sw.js", _static("sw.js", "application/javascript"))
     app.router.add_get("/icon.svg", _static("icon.svg", "image/svg+xml"))

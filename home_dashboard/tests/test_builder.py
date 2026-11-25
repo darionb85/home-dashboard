@@ -83,3 +83,11 @@ def test_user_template_dir_overrides(tmp_path):
 def test_template_names_are_safe(bad):
     with pytest.raises(ValueError):
         builder.load_template(bad)
+
+
+def test_ai_gauges_hidden_until_numeric(found):
+    cfg = builder.render(builder.load_template("catppuccin"), found)
+    cards = [c for s in cfg["views"][0]["sections"] for c in s["cards"]]
+    wrapped = [c for c in cards if c["type"] == "conditional"]
+    assert [c["card"]["entity"] for c in wrapped] == found["ai_usage"]
+    assert all(c["conditions"] == [{"condition": "numeric_state", "entity": c["card"]["entity"], "above": -1}] for c in wrapped)

@@ -1,3 +1,5 @@
+> **Superseded (v0.2.0):** Claude is now live through the Chrome [AI Usage Bridge](../docs/ai-usage-live.md), which needs no Mac job and covers ChatGPT too. This launchd design stays as an option for a Mac that's always on without Chrome open.
+
 # Step 2: live Claude row (DESIGN ONLY, not built)
 
 > ⚠️ **Unofficial.** `GET https://api.anthropic.com/api/oauth/usage` is an undocumented endpoint used by Claude Code. Anthropic can change or remove it without notice. If it breaks, the Claude row falls back to **stale**, then back to manual entry. It only reads *your own* usage with *your own* sign-in, on *your own* Mac.

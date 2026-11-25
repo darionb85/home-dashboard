@@ -70,6 +70,14 @@ class Store:
         self.put_row(row)
         return row
 
+    # -- per-service detail (extra windows etc.; shown as HA sensor attributes) --
+    def get_details(self, service: str) -> dict:
+        return dict(self.state.get("details", {}).get(service, {}))
+
+    def put_details(self, service: str, details: dict) -> None:
+        self.state.setdefault("details", {})[service] = details
+        self._save(self.state_path, self.state)
+
     # -- tokens ----------------------------------------------------------------
     def rotate_tokens(self) -> None:
         self.tokens = {"read": secrets.token_urlsafe(24), "write": secrets.token_urlsafe(32)}

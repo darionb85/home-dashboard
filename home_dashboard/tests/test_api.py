@@ -76,3 +76,51 @@ async def test_ingress_yaml_export_without_ha(aiohttp_client, svc):
     r = await c.get("/api/dashboard.yaml")
     assert r.status == 200 and "views:" in await r.text()
     assert (await c.get("/api/dashboard.yaml?template=../etc")).status == 400
+
+
+async def test_ingest_needs_write_token(aiohttp_client, svc):
+    c = await aiohttp_client(make_public_app(svc))
+    body = {"service": "claude", "pct_used": 64, "resets_at": "2026-11-28T09:00:00Z"}
+    assert (await c.post("/ingest", json=body)).status == 401
+    read = {"Authorization": f"Bearer {svc.store.tokens['read']}"}
+    assert (await c.post("/ingest", json=body, headers=read)).status == 401  # read token can't write
+
+
+async def test_ingest_sets_live_row_and_details(aiohttp_client, svc):
+    c = await aiohttp_client(make_public_app(svc))
+    hdr = {"Authorization": f"Bearer {svc.store.tokens['write']}"}
+    r = await c.post("/ingest", headers=hdr, json={
+        "service": "claude", "pct_used": 64, "resets_at": "2026-11-28T09:00:00Z",
+        "details": {"session_pct": 12, "weekly_pct": 64, "window": "weekly",
+                    "bad key!": 1, "nested": {"x": 1}, "long": "y" * 500}})
+    assert r.status == 200
+    row = await r.json()
+    validate_row(row)
+    assert row["status"] == "ok" and row["pct_used"] == 64
+    d = svc.store.get_details("claude")
+    assert d["session_pct"] == 12 and "bad key!" not in d and "nested" not in d and len(d["long"]) == 100
+    usage = await (await c.get("/usage.json", params={"token": svc.store.tokens["read"]})).json()
+    for row in usage["rows"]:
+        validate_row(row)  # details never leak into the published row shape
+
+
+async def test_ingest_error_keeps_last_value(aiohttp_client, svc):
+    c = await aiohttp_client(make_public_app(svc))
+    hdr = {"Authorization": f"Bearer {svc.store.tokens['write']}"}
+    await c.post("/ingest", headers=hdr, json={"service": "chatgpt", "pct_used": 20, "resets_at": "2026-11-26T00:00:00Z"})
+    svc._ingest_seen.clear()
+    r = await c.post("/ingest", headers=hdr, json={"service": "chatgpt", "error": "chatgpt.com: signed out"})
+    row = await r.json()
+    assert row["status"] == "error" and row["pct_used"] == 20
+    assert svc.store.get_details("chatgpt")["error"] == "chatgpt.com: signed out"
+
+
+async def test_ingest_rejects_bad_input_and_rate_limits(aiohttp_client, svc):
+    c = await aiohttp_client(make_public_app(svc))
+    hdr = {"Authorization": f"Bearer {svc.store.tokens['write']}"}
+    assert (await c.post("/ingest", headers=hdr, json={"service": "copilot", "pct_used": 1})).status == 400
+    assert (await c.post("/ingest", headers=hdr, json={"service": "nope", "pct_used": 1})).status == 400
+    assert (await c.post("/ingest", headers=hdr, json={"service": "gemini", "pct_used": -3})).status == 400
+    svc._ingest_seen.clear()
+    assert (await c.post("/ingest", headers=hdr, json={"service": "gemini", "pct_used": 3})).status == 200
+    assert (await c.post("/ingest", headers=hdr, json={"service": "gemini", "pct_used": 4})).status == 429

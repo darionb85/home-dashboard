@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AI Usage Bridge</title>
+<style>
+  :root { --base:#1e1e2e; --surface:#313244; --overlay:#45475a; --text:#cdd6f4; --sub:#a6adc8; --accent:#cba6f7; --red:#f38ba8; --green:#a6e3a1; }
+  body { margin:0; padding:16px; width:360px; background:var(--base); color:var(--text); font:14px/1.4 system-ui,sans-serif; }
+  h1 { font-size:16px; margin:0 0 12px; }
+  label { display:block; margin:10px 0 4px; color:var(--sub); font-size:12px; }
+  input[type=text], input[type=password] { width:100%; box-sizing:border-box; background:var(--surface); color:var(--text); border:1px solid var(--overlay); border-radius:8px; padding:8px; font:inherit; }
+  .row { display:flex; gap:8px; margin-top:12px; }
+  button { flex:1; background:var(--surface); color:var(--text); border:1px solid var(--overlay); border-radius:8px; padding:8px; font:inherit; cursor:pointer; }
+  button.primary { background:var(--accent); color:var(--base); border:none; font-weight:600; }
+  .svc { display:flex; gap:12px; margin-top:6px; } .svc label { display:flex; gap:4px; margin:0; color:var(--text); font-size:14px; }
+  pre { background:var(--surface); border-radius:8px; padding:8px; white-space:pre-wrap; font-size:12px; }
+  .muted { color:var(--sub); font-size:12px; }
+</style>
+</head>
+<body>
+<h1>AI Usage Bridge</h1>
+<label for="server">Add-on address</label>
+<input id="server" type="text" placeholder="http://homeassistant.tailnet.ts.net:8787">
+<label for="token">Write token (Dashboard setup page)</label>
+<input id="token" type="password" placeholder="write token">
+<label>Send usage for</label>
+<div class="svc">
+  <label><input type="checkbox" id="svc-claude" checked> Claude</label>
+  <label><input type="checkbox" id="svc-chatgpt" checked> ChatGPT</label>
+  <label title="Needs a capture first"><input type="checkbox" disabled> Gemini (soon)</label>
+</div>
+<div class="row">
+  <button id="save" class="primary">Save</button>
+  <button id="run">Send now</button>
+</div>
+<p class="muted">Runs every 15 minutes while Chrome is open. Stay logged in to claude.ai and chatgpt.com in this Chrome profile.</p>
+<pre id="out">No runs yet.</pre>
+<script src="options.js" type="module"></script>
+</body>
+</html>

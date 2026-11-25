@@ -1,12 +1,20 @@
 requires: [ai_usage]
 cards:
+  # A gauge only appears once its service has a number (live or typed in);
+  # unset rows stay hidden instead of showing "Entity is non-numeric".
   - _repeat: {over: ai_usage, as: ai}
-    type: gauge
-    entity: "{{ai}}"
-    min: 0
-    max: 100
-    needle: false
-    severity: {green: 0, yellow: 60, red: 85}
+    type: conditional
+    conditions:
+      - condition: numeric_state
+        entity: "{{ai}}"
+        above: -1
+    card:
+      type: gauge
+      entity: "{{ai}}"
+      min: 0
+      max: 100
+      needle: false
+      severity: {green: 0, yellow: 60, red: 85}
   - _requires: [addon_ingress]
     type: button
     name: Refresh / edit AI usage
