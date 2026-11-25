@@ -125,8 +125,8 @@ class Service:
         if service not in SERVICES or SERVICES[service]["live"]:
             raise ValueError("unknown or server-side service")
         now = time.monotonic()
-        last = self._ingest_seen.get(service, 0.0)
-        if now - last < INGEST_MIN_SECONDS:
+        last = self._ingest_seen.get(service)
+        if last is not None and now - last < INGEST_MIN_SECONDS:
             raise RateLimited(int(INGEST_MIN_SECONDS - (now - last)) + 1)
         self._ingest_seen[service] = now
         details = clean_details(body.get("details"))
@@ -160,14 +160,23 @@ class Service:
             except (HAError, aiohttp.ClientError, asyncio.TimeoutError) as exc:
                 log.warning("entity registry unavailable, using name hints: %s", exc)
             card = await card_installer.install(self.ha)
-            if card["needs_restart"]:
+            served = await card_installer.served(self.session) if card["copied"] else False
+            if served:
+                self.store.set_flag("card_restart_pending", False)
+            elif card["created_www"]:
                 self.store.set_flag("card_restart_pending", True)
-            if self.store.get_flag("card_restart_pending") and await card_installer.served(self.session):
-                self.store.set_flag("card_restart_pending", False)  # HA was restarted some other way
-            card["needs_restart"] = self.store.get_flag("card_restart_pending")
-            if card["ok"] and not card["needs_restart"]:
+            pending = self.store.get_flag("card_restart_pending")
+            forced = self.store.get_flag("card_force")
+            use = forced or (card["copied"] and card["registered"] and (served or not pending))
+            if use:
                 extras["ai_card"] = True
-            self.card_status = card
+                state = "active"
+            elif card["copied"] and pending:
+                state = "restart_needed"
+            else:
+                state = "failed"
+            self.card_status = {**card, "served": served, "state": state, "forced": forced,
+                                "resource_url": f"{card_installer.URL_PATH}?v={card_installer.CARD_VERSION}"}
             try:
                 info = await self.ha.addon_info()
                 if info.get("slug"):
@@ -321,6 +330,8 @@ def make_ingress_app(svc: Service, allow_any_remote: bool = False) -> web.Applic
             "templates": builder.list_templates(svc.extra_template_dirs),
             "template": svc.options["template"],
             "restart_pending": svc.store.get_flag("card_restart_pending"),
+            "card": svc.card_status,
+            "details": {r["service"]: svc.store.get_details(r["service"]) for r in svc.store.rows},
             "copilot_configured": bool(svc.options["github_username"] and svc.options["github_pat"]),
             "last_build": {k: b.get(k) for k in ("at", "template", "found", "pushed", "card")} if b else None,
         })
@@ -387,6 +398,13 @@ def make_ingress_app(svc: Service, allow_any_remote: bool = False) -> web.Applic
     app.router.add_get("/api/dashboard.yaml", dashboard_yaml)
     app.router.add_post("/api/tokens/rotate", rotate)
     app.router.add_post("/api/restart-ha", restart_ha)
+
+    async def force_card(_request):
+        svc.store.set_flag("card_force", True)
+        svc.store.set_flag("card_restart_pending", False)
+        return _json({"ok": True})
+
+    app.router.add_post("/api/card/force", force_card)
     add_shared_assets(app)
     return app
 

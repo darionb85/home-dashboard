@@ -11,7 +11,7 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 CARD_SRC = Path(__file__).parent / "static" / "ai-usage-card.js"
-CARD_VERSION = "0.3.0"
+CARD_VERSION = "0.3.1"
 URL_PATH = "/local/home-dashboard/ai-usage-card.js"
 CONFIG_ROOTS = ("/homeassistant", "/config")
 
@@ -63,14 +63,22 @@ async def register_resource(ha) -> None:
 
 
 async def install(ha) -> dict:
-    """{'ok': bool, 'needs_restart': bool, 'reason': str|None}"""
+    """{'copied', 'created_www', 'registered', 'reason'}; never raises."""
+    out = {"copied": False, "created_www": False, "registered": False, "reason": None}
     root = config_root()
     if root is None:
-        return {"ok": False, "needs_restart": False, "reason": "Home Assistant config folder not mapped"}
+        out["reason"] = "Home Assistant config folder isn't mapped into the add-on (update the add-on)"
+        return out
     try:
-        created = copy_card(root)
+        out["created_www"] = copy_card(root)
+        out["copied"] = True
+    except Exception as exc:
+        out["reason"] = f"couldn't copy the card into config/www: {exc}"[:160]
+        return out
+    try:
         await register_resource(ha)
-    except Exception as exc:  # never break the build over the card
-        log.warning("AI usage card install failed: %s", exc)
-        return {"ok": False, "needs_restart": False, "reason": str(exc)[:120]}
-    return {"ok": True, "needs_restart": created, "reason": None}
+        out["registered"] = True
+    except Exception as exc:
+        log.warning("AI usage card resource registration failed: %s", exc)
+        out["reason"] = f"couldn't register the dashboard resource: {exc}"[:160]
+    return out

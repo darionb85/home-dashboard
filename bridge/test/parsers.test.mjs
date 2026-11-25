@@ -17,6 +17,8 @@ test("claude: headline is the tighter window, both kept as details", () => {
   });
   assert.equal(r.pct_used, 64);
   assert.equal(r.resets_at, "2026-11-28T09:00:00Z");
+  assert.equal(r.details.fields, "five_hour,seven_day,seven_day_opus");
+  delete r.details.fields;
   assert.deepEqual(r.details, {
     window: "weekly", session_pct: 12, session_resets_at: "2026-11-25T18:00:00Z",
     weekly_pct: 64, weekly_resets_at: "2026-11-28T09:00:00Z", weekly_opus_pct: 3,

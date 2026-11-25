@@ -22,10 +22,17 @@
     <a id="yaml" href="api/dashboard.yaml"><button type="button">Download YAML</button></a>
   </div>
   <p id="buildStatus" class="muted"></p>
+  <p id="cardStatus"></p>
+  <div id="cardFail" class="card" hidden style="border:1px solid var(--red)">
+    <p id="cardFailReason"></p>
+    <p class="muted">Fix by hand: Settings → Dashboards → ⋮ (top right) → <b>Resources</b> → <b>Add resource</b> → URL <code id="cardUrl"></code>, type <b>JavaScript module</b> → Create. Then click:</p>
+    <button id="forceCard">I added it: use the AI card</button>
+  </div>
   <div id="restartBox" class="card" hidden style="border:1px solid var(--yellow)">
     <p><b>One-time step:</b> Home Assistant needs a restart to load the new AI usage card. Until then the AI section uses plain gauges.</p>
     <button id="restartHa" class="primary">Restart Home Assistant</button>
     <p class="muted">When it's back (about 1 minute), open this page again and press <b>Build dashboard</b>.</p>
+    <p class="muted">Already restarted and still seeing this? <a href="#" id="forceCard2">Use the AI card anyway</a>, then Build again.</p>
   </div>
   <details><summary class="muted">What was found</summary><pre id="found" class="mono"></pre></details>
 </div>
@@ -33,6 +40,9 @@
 <h2>2 · AI usage</h2>
 <p id="copilotNote" class="muted"></p>
 <div id="rows"></div>
+
+<h3 class="muted">What each AI last sent</h3>
+<div id="details" class="card mono"></div>
 
 <h2>3 · Phone widgets</h2>
 <div class="card">
@@ -82,7 +92,20 @@ async function load() {
   $("writeTok").textContent = s.tokens.write;
   $("copilotNote").textContent = s.copilot_configured ? "Copilot is live; the others you set by hand."
     : "Copilot isn't set up yet: add github_username and github_pat in the add-on's Configuration tab.";
-  $("restartBox").hidden = !s.restart_pending;
+  $("restartBox").hidden = !(s.card && s.card.state === "restart_needed");
+  const c = s.card || {};
+  $("cardStatus").textContent = c.state === "active" ? "AI card: active ✓" : c.state ? `AI card: ${c.state.replace("_", " ")}` : "";
+  $("cardFail").hidden = c.state !== "failed";
+  $("cardFailReason").textContent = c.reason || "The AI card couldn't be installed automatically.";
+  $("cardUrl").textContent = c.resource_url || "/local/home-dashboard/ai-usage-card.js";
+  const lines = [];
+  for (const [svc, d] of Object.entries(s.details || {})) {
+    if (!Object.keys(d).length) continue;
+    const f = (k) => (d[k] === undefined || d[k] === null ? "—" : d[k]);
+    lines.push(`${svc}: current ${f("session_pct")}% · weekly ${f("weekly_pct")}%` +
+      (d.error ? ` · ERROR ${d.error}` : "") + (d.fields ? `\n   fields: ${d.fields}` : ""));
+  }
+  $("details").textContent = lines.join("\n") || "Nothing received from the AI Usage Bridge yet.";
   const sel = $("template");
   if (!sel.options.length) for (const t of s.templates) sel.append(new Option(t, t, false, t === s.template));
   if (s.last_build) {
@@ -101,6 +124,12 @@ $("build").onclick = async () => {
 $("refresh").onclick = async () => {
   try { await api("POST", "api/refresh"); await load(); $("status").textContent = "Refreshed."; }
   catch (e) { $("status").textContent = e.status === 429 ? `Wait ${e.data.retry_after}s.` : `Refresh failed: ${e.message}`; }
+};
+for (const id of ["forceCard", "forceCard2"]) $(id).onclick = async (e) => {
+  e.preventDefault();
+  await api("POST", "api/card/force");
+  $("buildStatus").textContent = "OK. Press Build dashboard.";
+  await load();
 };
 $("restartHa").onclick = async () => {
   $("restartHa").disabled = true;

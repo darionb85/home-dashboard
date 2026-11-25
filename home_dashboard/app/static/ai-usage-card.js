@@ -9,7 +9,8 @@
  * weekly_resets_at, status. With no session/weekly attributes it shows the
  * sensor state as a single gauge (e.g. Copilot's monthly credits).
  */
-const CARD_VERSION = "0.3.0";
+const CARD_VERSION = "0.3.1";
+const HAS_WEEKLY = ["claude", "chatgpt", "gemini"];
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const num = (v) => (v === null || v === undefined || v === "" || isNaN(Number(v)) ? null : Number(v));
@@ -25,7 +26,7 @@ function fmtReset(iso, text) {
   const d = new Date(iso);
   if (isNaN(d)) return "";
   const ms = d - new Date();
-  if (ms <= 0) return "resetting…";
+  if (ms <= 0) return "resetting\u2026";
   const mins = Math.round(ms / 60000);
   if (mins < 60) return `resets in ${mins}m`;
   if (mins < 24 * 60) return `resets in ${Math.floor(mins / 60)}h ${mins % 60}m`;
@@ -68,6 +69,8 @@ class AiUsageCard extends HTMLElement {
     const s = num(a.session_pct), w = num(a.weekly_pct);
     if (s !== null) out.push({ label: "Current", pct: s, reset: fmtReset(a.session_resets_at, a.session_reset_text) });
     if (w !== null) out.push({ label: "Weekly", pct: w, reset: fmtReset(a.weekly_resets_at, a.weekly_reset_text) });
+    else if (s !== null && HAS_WEEKLY.some((k) => this._config.entity.endsWith(`_${k}`)))
+      out.push({ label: "Weekly", pct: null, reset: "no weekly number received" });
     if (!out.length) {
       const v = num(st.state);
       const isCopilot = this._config.entity.endsWith("_copilot");
@@ -88,7 +91,7 @@ class AiUsageCard extends HTMLElement {
       body = `<div class="gauges">${gauges.map((g) => {
         const { track, value } = arc(g.pct);
         const color = g.pct === null ? "transparent" : severity(g.pct);
-        const shown = g.pct === null ? "—" : `${Math.round(g.pct * 10) / 10}%`;
+        const shown = g.pct === null ? "\u2014" : `${Math.round(g.pct * 10) / 10}%`;
         return `<div class="gauge">
           <svg viewBox="0 0 100 58" role="img" aria-label="${esc(g.label)} ${esc(shown)}">
             <path d="${track}" class="track"/>

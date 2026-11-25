@@ -7,6 +7,11 @@ export class ParseError extends Error {}
 const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const isoFromUnix = (s) => (num(s) != null ? new Date(s * 1000).toISOString() : null);
 
+// names of the fields a site returned (no values), shown on the setup page to debug format changes
+function fieldNames(obj) {
+  return Object.keys(obj || {}).filter((k) => obj[k] !== null).join(",").slice(0, 100);
+}
+
 function headline(windows) {
   const usable = windows.filter((w) => w.pct != null);
   if (!usable.length) throw new ParseError("no usage windows in response");
@@ -34,7 +39,7 @@ export function parseClaudeUsage(data) {
   });
   const windows = [w("five_hour", "session"), w("seven_day", "weekly")];
   const top = headline(windows);
-  const details = { window: top.label };
+  const details = { window: top.label, fields: fieldNames(data) };
   for (const x of windows) {
     if (x.pct != null) {
       details[`${x.label}_pct`] = x.pct;
@@ -71,7 +76,7 @@ export function parseChatgptUsage(data, nowMs = Date.now()) {
   };
   const windows = [w(rl.primary_window, "session"), w(rl.secondary_window, "weekly")];
   const top = headline(windows);
-  const details = { window: top.label };
+  const details = { window: top.label, fields: fieldNames(rl) };
   if (data.plan_type) details.plan = String(data.plan_type);
   if (typeof rl.limit_reached === "boolean") details.limit_reached = rl.limit_reached;
   for (const x of windows) {
