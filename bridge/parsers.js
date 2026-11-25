@@ -162,3 +162,19 @@ export function parseGeminiText(text, now = new Date()) {
   }
   return { pct_used: top.pct, resets_at: top.resets_at, details };
 }
+
+// ---------- Grok (grok.com) ----------
+// POST https://grok.com/rest/rate-limits {requestKind: "DEFAULT", modelName}
+// -> {windowSizeSeconds, remainingQueries, totalQueries, waitTimeSeconds?}
+export function parseGrokRateLimit(data, nowMs = Date.now()) {
+  const total = num(data && data.totalQueries), remaining = num(data && data.remainingQueries);
+  if (total == null || remaining == null || total <= 0) throw new ParseError("no rate limit in Grok response");
+  const pct = Math.round(((total - remaining) / total) * 1000) / 10;
+  const wait = num(data.waitTimeSeconds);
+  const win = num(data.windowSizeSeconds);
+  const resets_at = wait != null && wait > 0 ? new Date(nowMs + wait * 1000).toISOString() : null;
+  const details = { window: "session", session_pct: pct, session_resets_at: resets_at,
+                    queries_left: remaining, queries_total: total };
+  if (!resets_at && win != null) details.session_reset_text = `rolling ${Math.round(win / 3600 * 10) / 10}h window`;
+  return { pct_used: pct, resets_at, details };
+}

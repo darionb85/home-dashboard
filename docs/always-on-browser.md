@@ -36,7 +36,7 @@ The Docker LXC script also installs **Portainer**, at `https://<lxc-ip>:9443`. D
    - `CUSTOM_USER` = `dashboard`
    - `PASSWORD` = a long password you make up (save it in your password manager)
 5. **Deploy the stack.** The first pull is about 1 GB, so allow a couple of minutes.
-6. Check **Containers**: `ai-usage-browser` should be **running**. A `…bridge-fetch…` container showing **exited** is normal: it downloads the extension and stops.
+6. Check **Containers**: `ai-usage-browser` and `…bridge-sync…` should both be **running**. bridge-sync keeps the extension up to date by checking GitHub hourly.
 
 Something wrong? Click the container → **Logs**, and paste the last lines to me.
 
@@ -58,7 +58,7 @@ If you turn off your own computer, nothing changes. If the Proxmox host reboots,
 | When | Do |
 |---|---|
 | A row shows **error: signed out** | Open `https://<lxc-ip>:3001` and log in to that site again. Google is the one most likely to ask now and then. |
-| I push a bridge update | Portainer → Stacks → ai-usage-browser → **Update the stack** (tick *Re-pull image*), then in that Chromium go to `chrome://extensions` → AI Usage Bridge → ↻ reload. |
+| I push a bridge update | Nothing. bridge-sync downloads it within an hour, and the extension reloads itself on its next run. To get it immediately: Portainer → Containers → `…bridge-sync…` → **Restart**, then ↻ on the extension in `chrome://extensions`. |
 | You want to view it away from home | Not needed for it to work. If you want it, install Tailscale on the LXC from the Proxmox CT console (Proxmox → the CT → **Console**, not Portainer). |
 
 ## Security

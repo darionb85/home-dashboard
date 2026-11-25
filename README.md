@@ -38,7 +38,7 @@ Adding a device later? Open **Dashboard setup** → **Build dashboard** again an
 | Tesla Wall Connector | Tesla Wall Connector (built in, local) | ✅ today |
 | EcoFlow Delta 3 Ultra Plus | EcoFlow Cloud (Marketplace), Bluetooth as backup | ⚠️ best effort |
 | Vivosun GrowHub E42A | `vivosun_growhub` (Marketplace, unofficial) | ✅ today |
-| AI usage | One card per AI (current + weekly, with resets). Copilot live (add-on); Claude, ChatGPT, Gemini live via the [AI Usage Bridge](docs/ai-usage-live.md) in an [always-on browser](docs/always-on-browser.md); Grok by hand | ✅ |
+| AI usage | One card per AI (current + weekly, with resets). Copilot live (add-on); Claude, ChatGPT, Gemini, Grok live via the [AI Usage Bridge](docs/ai-usage-live.md) in an [always-on browser](docs/always-on-browser.md) | ✅ |
 | Tesla solar + car | Tesla Fleet | 🕒 next build: [docs/tesla-fleet.md](docs/tesla-fleet.md) |
 | iCloud Reminders/Notes | iOS Shortcut → HA | 🕒 later: [docs/icloud-shortcut.md](docs/icloud-shortcut.md) |
 

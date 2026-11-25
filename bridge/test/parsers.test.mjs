@@ -86,3 +86,16 @@ test("reset phrases", () => {
   assert.equal(new Date(parseResetPhrase("Friday at 9:00 AM", NOW)).getDay(), 5);
   assert.equal(parseResetPhrase("whenever", NOW), null);
 });
+
+import { parseGrokRateLimit } from "../parsers.js";
+
+test("grok: used % from remaining/total, reset from waitTimeSeconds", () => {
+  const r = parseGrokRateLimit({ windowSizeSeconds: 7200, remainingQueries: 24, totalQueries: 25 }, Date.parse("2026-11-25T15:00:00Z"));
+  assert.equal(r.pct_used, 4);
+  assert.equal(r.resets_at, null);
+  assert.equal(r.details.session_reset_text, "rolling 2h window");
+  const w = parseGrokRateLimit({ windowSizeSeconds: 7200, remainingQueries: 0, totalQueries: 25, waitTimeSeconds: 1014 }, Date.parse("2026-11-25T15:00:00Z"));
+  assert.equal(w.pct_used, 100);
+  assert.equal(w.resets_at, "2026-11-25T15:16:54.000Z");
+  assert.throws(() => parseGrokRateLimit({ windowSizeSeconds: 7200 }), ParseError);
+});

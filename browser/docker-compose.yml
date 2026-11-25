@@ -1,29 +1,41 @@
 # Always-on Chromium for the AI Usage Bridge.
 # Works as a Portainer stack (Stacks → Add stack → Web editor) or with `docker compose up -d`.
-# No host folders or console needed: the bridge extension is downloaded into a Docker volume.
+# No host folders or console needed: the bridge extension is synced into a Docker volume hourly.
 # Set CUSTOM_USER and PASSWORD in Portainer's "Environment variables" section (or a .env file).
 # Open https://<docker-host-ip>:3001 to see the browser. LAN only: never port-forward it.
 services:
-  bridge-fetch:
+  # Keeps the AI Usage Bridge extension up to date: downloads it now and every hour.
+  # The extension reloads itself when a new version lands.
+  bridge-sync:
     image: alpine/git:latest
     entrypoint:
       - sh
       - -c
-      - >
-        rm -rf /out/* &&
-        git clone -q --depth 1 https://github.com/darionb85/home-dashboard /tmp/r &&
-        cp -r /tmp/r/bridge/. /out/ &&
-        echo "bridge $(cat /out/manifest.json | grep '\"version\"') ready"
+      - |
+        while true; do
+          rm -rf /tmp/r
+          if git clone -q --depth 1 https://github.com/darionb85/home-dashboard /tmp/r; then
+            cp -r /tmp/r/bridge/. /out/ && echo "bridge synced: $$(grep '"version"' /out/manifest.json)"
+          else
+            echo "bridge sync failed (will retry in 1h)"
+          fi
+          sleep 3600
+        done
     volumes:
       - bridge:/out
-    restart: "no"
+    healthcheck:
+      test: ["CMD", "test", "-f", "/out/manifest.json"]
+      interval: 10s
+      retries: 30
+      start_period: 5s
+    restart: unless-stopped
 
   chromium:
     image: lscr.io/linuxserver/chromium:latest
     container_name: ai-usage-browser
     depends_on:
-      bridge-fetch:
-        condition: service_completed_successfully
+      bridge-sync:
+        condition: service_healthy
     security_opt:
       - seccomp:unconfined
     environment:

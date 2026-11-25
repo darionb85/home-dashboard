@@ -14,10 +14,11 @@ async function load() {
   const c = await chrome.storage.local.get(["server", "token", "services", "last"]);
   $("server").value = c.server || "";
   $("token").value = c.token || "";
-  const s = c.services || { claude: true, chatgpt: true, gemini: true };
+  const s = { claude: true, chatgpt: true, gemini: true, grok: true, ...(c.services || {}) };
   $("svc-claude").checked = !!s.claude;
   $("svc-chatgpt").checked = !!s.chatgpt;
   $("svc-gemini").checked = s.gemini !== false;
+  $("svc-grok").checked = s.grok !== false;
   show(c.last);
 }
 
@@ -30,7 +31,7 @@ $("save").onclick = async () => {
   await chrome.storage.local.set({
     server,
     token: $("token").value.trim(),
-    services: { claude: $("svc-claude").checked, chatgpt: $("svc-chatgpt").checked, gemini: $("svc-gemini").checked },
+    services: { claude: $("svc-claude").checked, chatgpt: $("svc-chatgpt").checked, gemini: $("svc-gemini").checked, grok: $("svc-grok").checked },
   });
   $("out").textContent = "Saved. Press “Send now” to test.";
 };
@@ -49,4 +50,6 @@ $("gemtext").onclick = async () => {
   catch { $("out").textContent = res.text; }
 };
 
+// show the running version so it's obvious when an update landed
+document.querySelector("h1").textContent += ` ${chrome.runtime.getManifest().version}`;
 load();

@@ -1,7 +1,7 @@
 // AI Usage Bridge: every 15 min (while Chrome is open) read usage with your existing
 // logins and POST only {service, pct_used, resets_at, details} to the add-on.
 // Session cookies and tokens never leave the browser and are never logged or stored.
-import { pickClaudeOrg, parseClaudeUsage, parseChatgptSession, parseChatgptUsage, parseGeminiText } from "./parsers.js";
+import { pickClaudeOrg, parseClaudeUsage, parseChatgptSession, parseChatgptUsage, parseGeminiText, parseGrokRateLimit } from "./parsers.js";
 
 const PERIOD_MIN = 15;
 const TIMEOUT_MS = 20000;
@@ -27,7 +27,39 @@ const FETCHERS = {
   async gemini() {
     return parseGeminiText(await readGeminiUsagePage());
   },
+  async grok() {
+    // model names change over time; use the first one grok.com answers for
+    let last = "no Grok model answered";
+    for (const modelName of GROK_MODELS) {
+      try {
+        const data = await getJSON("https://grok.com/rest/rate-limits", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requestKind: "DEFAULT", modelName }),
+        });
+        const r = parseGrokRateLimit(data);
+        r.details.model = modelName;
+        return r;
+      } catch (e) {
+        last = String(e.message || e);
+        if (/signed out/.test(last)) throw e;
+      }
+    }
+    throw new Error(last);
+  },
 };
+
+const GROK_MODELS = ["grok-4", "grok-4-auto", "grok-3", "grok-4-fast"];
+
+// Unpacked extensions don't reload themselves when their files change on disk.
+// The always-on browser's sync container refreshes the files hourly; this picks them up.
+async function selfUpdate() {
+  try {
+    const r = await fetch(chrome.runtime.getURL("manifest.json"), { cache: "no-store" });
+    const disk = (await r.json()).version;
+    if (disk && disk !== chrome.runtime.getManifest().version) chrome.runtime.reload();
+  } catch (_) {}
+}
 
 // Gemini has no JSON endpoint we can call, so open its usage page in a background
 // tab, wait for it to render, read the visible text, and close the tab.
@@ -73,7 +105,7 @@ export async function runAll() {
   const cfg = await chrome.storage.local.get(["server", "token", "services"]);
   const results = {};
   if (!cfg.server || !cfg.token) return { error: "Set the server URL and write token first." };
-  const services = cfg.services || { claude: true, chatgpt: true, gemini: true };
+  const services = { claude: true, chatgpt: true, gemini: true, grok: true, ...(cfg.services || {}) };
   for (const [name, fetcher] of Object.entries(FETCHERS)) {
     if (!services[name]) continue;
     let payload;
@@ -98,7 +130,11 @@ function schedule() {
 }
 chrome.runtime.onInstalled.addListener(schedule);
 chrome.runtime.onStartup.addListener(schedule);
-chrome.alarms.onAlarm.addListener((a) => { if (a.name === "ai-usage") runAll(); });
+chrome.alarms.onAlarm.addListener(async (a) => {
+  if (a.name !== "ai-usage") return;
+  await runAll();
+  await selfUpdate();
+});
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg && msg.type === "run") { runAll().then(reply); return true; }
   if (msg && msg.type === "gemini-text") {

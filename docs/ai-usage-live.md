@@ -1,6 +1,6 @@
-# Live Claude, ChatGPT and Gemini usage
+# Live Claude, ChatGPT, Gemini and Grok usage
 
-> ⚠️ **Unofficial.** None of these services offer a public "usage %" API for consumer plans. The bridge reads the same data their own usage pages show: claude.ai/settings/usage, chatgpt.com/codex/settings/usage and gemini.google.com/usage (Gemini has no data feed, so the bridge opens that page in a background tab for a few seconds and reads the visible numbers). A site change can break a row. The row then shows **error** with the reason, and the old number stays until the next good update.
+> ⚠️ **Unofficial.** None of these services offer a public "usage %" API for consumer plans. The bridge reads the same data their own usage pages show: claude.ai/settings/usage, chatgpt.com/codex/settings/usage, grok.com's rate-limit check (the same one its model picker uses) and gemini.google.com/usage (Gemini has no data feed, so the bridge opens that page in a background tab for a few seconds and reads the visible numbers). A site change can break a row. The row then shows **error** with the reason, and the old number stays until the next good update.
 
 ## How it works
 
