@@ -82,3 +82,83 @@ export function parseChatgptUsage(data, nowMs = Date.now()) {
   }
   return { pct_used: top.pct, resets_at: top.resets_at, details };
 }
+
+// ---------- Gemini (gemini.google.com/usage) ----------
+// No public JSON; we read the page's visible text, e.g.
+//   "Current usage  37% used  Resets in 2 hr 10 min   Weekly limit  12% used  Resets Fri, Nov 28, 9:00 AM"
+const UNIT_MS = { d: 864e5, day: 864e5, days: 864e5, h: 36e5, hr: 36e5, hrs: 36e5, hour: 36e5, hours: 36e5,
+                  m: 6e4, min: 6e4, mins: 6e4, minute: 6e4, minutes: 6e4 };
+const WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+export function parseResetPhrase(phrase, now = new Date()) {
+  if (!phrase) return null;
+  const p = phrase.trim().replace(/[.,;]+$/, "");
+  // "in 2 hr 10 min" / "in 3 days" / "2h 10m"
+  const parts = [...p.matchAll(/(\d+(?:\.\d+)?)\s*(days?|d|hours?|hrs?|h|minutes?|mins?|m)\b/gi)];
+  if (parts.length && /^(in\s+)?\d/i.test(p)) {
+    const ms = parts.reduce((t, [, n, u]) => t + parseFloat(n) * (UNIT_MS[u.toLowerCase()] || 0), 0);
+    if (ms > 0) return new Date(now.getTime() + ms).toISOString();
+  }
+  if (/^tomorrow/i.test(p)) {
+    const t = p.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+    const d = new Date(now); d.setDate(d.getDate() + 1);
+    if (t) d.setHours((+t[1] % 12) + (/pm/i.test(t[3]) ? 12 : 0), +(t[2] || 0), 0, 0);
+    return d.toISOString();
+  }
+  // "Friday at 9:00 AM" / "Fri 9 AM"
+  const wd = p.match(/^(on\s+)?(sun|mon|tue|wed|thu|fri|sat)[a-z]*\b(?![,\s]+[a-z]{3}\s+\d)/i);
+  if (wd) {
+    const target = WEEKDAYS.indexOf(wd[2].toLowerCase());
+    const d = new Date(now);
+    let add = (target - d.getDay() + 7) % 7;
+    const t = p.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+    d.setDate(d.getDate() + add);
+    if (t) d.setHours((+t[1] % 12) + (/pm/i.test(t[3]) ? 12 : 0), +(t[2] || 0), 0, 0);
+    if (d <= now) d.setDate(d.getDate() + 7);
+    return d.toISOString();
+  }
+  // "Nov 28, 9:00 AM" / "Fri, Nov 28 at 9:00 AM" / "November 28"
+  const cleaned = p.replace(/^(on|at)\s+/i, "").replace(/^(sun|mon|tue|wed|thu|fri|sat)[a-z]*,?\s+/i, "").replace(/\s+at\s+/i, " ");
+  const m = cleaned.match(/^([A-Za-z]{3,9})\s+(\d{1,2})(?:,?\s+(\d{4}))?(?:,?\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)))?/i);
+  if (m) {
+    const year = m[3] || now.getFullYear();
+    let d = new Date(`${m[1]} ${m[2]} ${year} ${m[4] || "12:00 AM"}`);
+    if (!isNaN(d)) {
+      if (!m[3] && d < now - 864e5) d = new Date(`${m[1]} ${m[2]} ${+year + 1} ${m[4] || "12:00 AM"}`);
+      return d.toISOString();
+    }
+  }
+  return null;
+}
+
+function geminiWindow(section, now) {
+  if (!section) return { pct: null, resets_at: null, reset_text: null };
+  const pm = section.match(/(\d{1,3}(?:\.\d+)?)\s*%\s*(used|left|remaining|available)?/i);
+  let pct = pm ? parseFloat(pm[1]) : null;
+  if (pct != null && pm[2] && /left|remaining|available/i.test(pm[2])) pct = Math.max(0, 100 - pct);
+  const rm = section.match(/(?:resets?|refreshes?|renews?)\s+(?:on\s+|at\s+)?([^\n%]{2,60}?)(?=\s{2,}|\n|$|\s+(?:weekly|current)\b)/i);
+  const reset_text = rm ? rm[1].trim() : null;
+  return { pct, resets_at: parseResetPhrase(reset_text, now), reset_text };
+}
+
+export function parseGeminiText(text, now = new Date()) {
+  if (!text || typeof text !== "string") throw new ParseError("empty Gemini page");
+  if (/sign in|choose an account/i.test(text) && !/%/.test(text)) throw new ParseError("not signed in to gemini.google.com");
+  const t = text.replace(/\r/g, "");
+  const cur = t.search(/current\s+usage|5[- ]hour|five[- ]hour/i);
+  const wk = t.search(/weekly\s+(limit|usage)/i);
+  const slice = (start, other) => (start < 0 ? null : t.slice(start, other > start ? other : start + 400));
+  const session = geminiWindow(slice(cur, wk), now);
+  const weekly = geminiWindow(slice(wk, cur), now);
+  const windows = [{ label: "session", ...session }, { label: "weekly", ...weekly }];
+  const top = headline(windows);
+  const details = { window: top.label };
+  for (const w of windows) {
+    if (w.pct != null) {
+      details[`${w.label}_pct`] = w.pct;
+      details[`${w.label}_resets_at`] = w.resets_at;
+      if (!w.resets_at && w.reset_text) details[`${w.label}_reset_text`] = w.reset_text;
+    }
+  }
+  return { pct_used: top.pct, resets_at: top.resets_at, details };
+}

@@ -1,16 +1,29 @@
 {
   "manifest_version": 3,
   "name": "AI Usage Bridge",
-  "version": "0.2.0",
-  "description": "Reads your Claude and ChatGPT usage with your existing logins and sends only the % numbers to your Home Dashboard add-on.",
-  "background": { "service_worker": "background.js", "type": "module" },
-  "permissions": ["alarms", "storage"],
+  "version": "0.3.0",
+  "description": "Reads your Claude, ChatGPT and Gemini usage with your existing logins and sends only the % numbers to your Home Dashboard add-on.",
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "alarms",
+    "storage",
+    "scripting"
+  ],
   "host_permissions": [
     "https://claude.ai/*",
     "https://chatgpt.com/*",
     "https://gemini.google.com/*"
   ],
-  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "options_page": "options.html",
-  "action": { "default_title": "AI Usage Bridge", "default_popup": "options.html" }
+  "action": {
+    "default_title": "AI Usage Bridge",
+    "default_popup": "options.html"
+  }
 }

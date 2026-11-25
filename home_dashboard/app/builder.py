@@ -149,8 +149,11 @@ def render_cards(cards: list, ctx: dict) -> list:
     for card in cards:
         card = copy.deepcopy(card)
         needs = card.pop("_requires", [])
+        unless = card.pop("_unless", [])
         repeat = card.pop("_repeat", None)
         if not _present(needs, ctx):
+            continue
+        if unless and _present(unless, ctx):
             continue
         if repeat:
             items = ctx.get(repeat["over"]) or []

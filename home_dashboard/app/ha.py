@@ -46,6 +46,12 @@ class HAClient:
             if r.status not in (200, 201):
                 raise HAError(f"set_state HTTP {r.status}")
 
+    async def call_service(self, domain: str, service: str, data: dict | None = None) -> None:
+        async with self.session.post(f"{CORE_API}/services/{domain}/{service}", headers=self._headers(),
+                                     json=data or {}, timeout=20) as r:
+            if r.status not in (200, 201):
+                raise HAError(f"service HTTP {r.status}")
+
     async def addon_info(self) -> dict:
         async with self.session.get(f"{SUPERVISOR}/addons/self/info", headers=self._headers(), timeout=20) as r:
             if r.status != 200:

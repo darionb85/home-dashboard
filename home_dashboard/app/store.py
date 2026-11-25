@@ -78,6 +78,14 @@ class Store:
         self.state.setdefault("details", {})[service] = details
         self._save(self.state_path, self.state)
 
+    # -- flags ---------------------------------------------------------------------
+    def get_flag(self, name: str) -> bool:
+        return bool(self.state.get("flags", {}).get(name))
+
+    def set_flag(self, name: str, value: bool) -> None:
+        self.state.setdefault("flags", {})[name] = bool(value)
+        self._save(self.state_path, self.state)
+
     # -- tokens ----------------------------------------------------------------
     def rotate_tokens(self) -> None:
         self.tokens = {"read": secrets.token_urlsafe(24), "write": secrets.token_urlsafe(32)}

@@ -1,5 +1,5 @@
 name: Home Dashboard
-version: "0.2.0"
+version: "0.3.0"
 slug: home_dashboard
 description: One-click dashboard builder + AI usage service (usage.json for phone widgets)
 url: https://github.com/darionb85/home-dashboard
@@ -16,6 +16,8 @@ hassio_api: true
 map:
   - type: share
     read_only: true
+  - type: homeassistant_config
+    read_only: false
 ports:
   8787/tcp: 8787
 ports_description:

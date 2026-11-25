@@ -53,3 +53,36 @@ test("chatgpt: windows labelled by length, unix reset converted", () => {
 test("chatgpt: missing rate_limit is an error", () => {
   assert.throws(() => parseChatgptUsage({ plan_type: "free" }), ParseError);
 });
+
+import { parseGeminiText, parseResetPhrase } from "../parsers.js";
+const NOW = new Date("2026-11-25T15:00:00Z");
+
+test("gemini: reads current + weekly with relative and dated resets", () => {
+  const text = `Usage limits\nCurrent usage\n37% used\nResets in 2 hr 10 min\nWeekly limit\n12% used\nResets Nov 28, 9:00 AM\nUpgrade`;
+  const r = parseGeminiText(text, NOW);
+  assert.equal(r.pct_used, 37);
+  assert.equal(r.details.window, "session");
+  assert.equal(r.details.session_pct, 37);
+  assert.equal(r.details.weekly_pct, 12);
+  assert.equal(r.details.session_resets_at, "2026-11-25T17:10:00.000Z");
+  assert.ok(r.details.weekly_resets_at.startsWith("2026-11-2"));
+});
+
+test("gemini: 'left' is converted to used; weekly can be the headline", () => {
+  const r = parseGeminiText("Current usage 90% left Resets in 4 hours  Weekly limit 61% used Resets Friday at 9:00 AM", NOW);
+  assert.equal(r.details.session_pct, 10);
+  assert.equal(r.pct_used, 61);
+  assert.equal(r.details.window, "weekly");
+});
+
+test("gemini: signed-out or unrecognised page is an error", () => {
+  assert.throws(() => parseGeminiText("Sign in to continue to Gemini", NOW), ParseError);
+  assert.throws(() => parseGeminiText("Hello there", NOW), ParseError);
+});
+
+test("reset phrases", () => {
+  assert.equal(parseResetPhrase("in 45 min", NOW), "2026-11-25T15:45:00.000Z");
+  assert.equal(parseResetPhrase("in 3 days", NOW), "2026-11-28T15:00:00.000Z");
+  assert.equal(new Date(parseResetPhrase("Friday at 9:00 AM", NOW)).getDay(), 5);
+  assert.equal(parseResetPhrase("whenever", NOW), null);
+});

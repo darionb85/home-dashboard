@@ -14,9 +14,10 @@ async function load() {
   const c = await chrome.storage.local.get(["server", "token", "services", "last"]);
   $("server").value = c.server || "";
   $("token").value = c.token || "";
-  const s = c.services || { claude: true, chatgpt: true };
+  const s = c.services || { claude: true, chatgpt: true, gemini: true };
   $("svc-claude").checked = !!s.claude;
   $("svc-chatgpt").checked = !!s.chatgpt;
+  $("svc-gemini").checked = s.gemini !== false;
   show(c.last);
 }
 
@@ -29,7 +30,7 @@ $("save").onclick = async () => {
   await chrome.storage.local.set({
     server,
     token: $("token").value.trim(),
-    services: { claude: $("svc-claude").checked, chatgpt: $("svc-chatgpt").checked },
+    services: { claude: $("svc-claude").checked, chatgpt: $("svc-chatgpt").checked, gemini: $("svc-gemini").checked },
   });
   $("out").textContent = "Saved. Press “Send now” to test.";
 };
@@ -38,6 +39,14 @@ $("run").onclick = async () => {
   $("out").textContent = "Sending…";
   const res = await chrome.runtime.sendMessage({ type: "run" });
   show(res.error ? res : { at: new Date().toISOString(), results: res.results });
+};
+
+$("gemtext").onclick = async () => {
+  $("out").textContent = "Opening gemini.google.com/usage…";
+  const res = await chrome.runtime.sendMessage({ type: "gemini-text" });
+  if (res.error) { $("out").textContent = res.error; return; }
+  try { await navigator.clipboard.writeText(res.text); $("out").textContent = "Copied. Paste it to Claude."; }
+  catch { $("out").textContent = res.text; }
 };
 
 load();

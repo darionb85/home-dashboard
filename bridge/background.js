@@ -1,7 +1,7 @@
 // AI Usage Bridge: every 15 min (while Chrome is open) read usage with your existing
 // logins and POST only {service, pct_used, resets_at, details} to the add-on.
 // Session cookies and tokens never leave the browser and are never logged or stored.
-import { pickClaudeOrg, parseClaudeUsage, parseChatgptSession, parseChatgptUsage } from "./parsers.js";
+import { pickClaudeOrg, parseClaudeUsage, parseChatgptSession, parseChatgptUsage, parseGeminiText } from "./parsers.js";
 
 const PERIOD_MIN = 15;
 const TIMEOUT_MS = 20000;
@@ -24,8 +24,37 @@ const FETCHERS = {
     if (s.accountId) headers["ChatGPT-Account-Id"] = s.accountId;
     return parseChatgptUsage(await getJSON("https://chatgpt.com/backend-api/wham/usage", { headers }));
   },
-  // gemini: added once its usage response has been captured (see docs/ai-usage-live.md)
+  async gemini() {
+    return parseGeminiText(await readGeminiUsagePage());
+  },
 };
+
+// Gemini has no JSON endpoint we can call, so open its usage page in a background
+// tab, wait for it to render, read the visible text, and close the tab.
+const GEMINI_USAGE_URL = "https://gemini.google.com/usage";
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+export async function readGeminiUsagePage() {
+  const tab = await chrome.tabs.create({ url: GEMINI_USAGE_URL, active: false });
+  try {
+    let text = "";
+    for (let i = 0; i < 20; i++) {           // up to ~30 s
+      await sleep(1500);
+      const t = await chrome.tabs.get(tab.id);
+      if (t.url && /accounts\.google\.com/.test(t.url)) throw new Error("gemini.google.com: signed out. Open it once and log in.");
+      if (t.status !== "complete") continue;
+      try {
+        const [res] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => document.body ? document.body.innerText : "" });
+        text = (res && res.result) || "";
+      } catch (_) { continue; }
+      if (/%/.test(text) && /(current\s+usage|weekly)/i.test(text)) break;
+    }
+    if (!text) throw new Error("gemini.google.com/usage didn't load");
+    return text;
+  } finally {
+    chrome.tabs.remove(tab.id).catch(() => {});
+  }
+}
 
 async function post(server, token, payload) {
   const r = await fetch(`${server}/ingest`, {
@@ -44,7 +73,7 @@ export async function runAll() {
   const cfg = await chrome.storage.local.get(["server", "token", "services"]);
   const results = {};
   if (!cfg.server || !cfg.token) return { error: "Set the server URL and write token first." };
-  const services = cfg.services || { claude: true, chatgpt: true };
+  const services = cfg.services || { claude: true, chatgpt: true, gemini: true };
   for (const [name, fetcher] of Object.entries(FETCHERS)) {
     if (!services[name]) continue;
     let payload;
@@ -72,4 +101,8 @@ chrome.runtime.onStartup.addListener(schedule);
 chrome.alarms.onAlarm.addListener((a) => { if (a.name === "ai-usage") runAll(); });
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg && msg.type === "run") { runAll().then(reply); return true; }
+  if (msg && msg.type === "gemini-text") {
+    readGeminiUsagePage().then((text) => reply({ text }), (e) => reply({ error: String(e.message || e) }));
+    return true;
+  }
 });

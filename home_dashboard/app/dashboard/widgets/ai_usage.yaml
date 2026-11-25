@@ -1,8 +1,20 @@
 requires: [ai_usage]
 cards:
-  # A gauge only appears once its service has a number (live or typed in);
-  # unset rows stay hidden instead of showing "Entity is non-numeric".
+  # One card per AI: current/session + weekly gauges and resets (custom:ai-usage-card,
+  # installed by the add-on). Hidden until that AI has a number.
   - _repeat: {over: ai_usage, as: ai}
+    _requires: [ai_card]
+    type: conditional
+    conditions:
+      - condition: numeric_state
+        entity: "{{ai}}"
+        above: -1
+    card:
+      type: custom:ai-usage-card
+      entity: "{{ai}}"
+  # Fallback if the card couldn't be installed yet: built-in gauges.
+  - _repeat: {over: ai_usage, as: ai}
+    _unless: [ai_card]
     type: conditional
     conditions:
       - condition: numeric_state

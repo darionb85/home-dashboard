@@ -22,6 +22,11 @@
     <a id="yaml" href="api/dashboard.yaml"><button type="button">Download YAML</button></a>
   </div>
   <p id="buildStatus" class="muted"></p>
+  <div id="restartBox" class="card" hidden style="border:1px solid var(--yellow)">
+    <p><b>One-time step:</b> Home Assistant needs a restart to load the new AI usage card. Until then the AI section uses plain gauges.</p>
+    <button id="restartHa" class="primary">Restart Home Assistant</button>
+    <p class="muted">When it's back (about 1 minute), open this page again and press <b>Build dashboard</b>.</p>
+  </div>
   <details><summary class="muted">What was found</summary><pre id="found" class="mono"></pre></details>
 </div>
 
@@ -77,6 +82,7 @@ async function load() {
   $("writeTok").textContent = s.tokens.write;
   $("copilotNote").textContent = s.copilot_configured ? "Copilot is live; the others you set by hand."
     : "Copilot isn't set up yet: add github_username and github_pat in the add-on's Configuration tab.";
+  $("restartBox").hidden = !s.restart_pending;
   const sel = $("template");
   if (!sel.options.length) for (const t of s.templates) sel.append(new Option(t, t, false, t === s.template));
   if (s.last_build) {
@@ -95,6 +101,11 @@ $("build").onclick = async () => {
 $("refresh").onclick = async () => {
   try { await api("POST", "api/refresh"); await load(); $("status").textContent = "Refreshed."; }
   catch (e) { $("status").textContent = e.status === 429 ? `Wait ${e.data.retry_after}s.` : `Refresh failed: ${e.message}`; }
+};
+$("restartHa").onclick = async () => {
+  $("restartHa").disabled = true;
+  try { await api("POST", "api/restart-ha"); $("status").textContent = "Restarting Home Assistant…"; }
+  catch (e) { $("status").textContent = `Restart failed: ${e.message}. Use Settings → System → Restart instead.`; $("restartHa").disabled = false; }
 };
 $("rotate").onclick = async () => {
   if (!confirm("Rotate tokens? Phone widgets will need the new read token.")) return;

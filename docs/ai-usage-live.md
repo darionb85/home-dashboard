@@ -1,6 +1,6 @@
-# Live Claude, ChatGPT (and soon Gemini) usage
+# Live Claude, ChatGPT and Gemini usage
 
-> ⚠️ **Unofficial.** None of these services offer a public "usage %" API for consumer plans. The bridge reads the same data their own usage pages load: claude.ai/settings/usage and chatgpt.com/codex/settings/usage. A site change can break a row. The row then shows **error** with the reason, and the old number stays until the next good update.
+> ⚠️ **Unofficial.** None of these services offer a public "usage %" API for consumer plans. The bridge reads the same data their own usage pages show: claude.ai/settings/usage, chatgpt.com/codex/settings/usage and gemini.google.com/usage (Gemini has no data feed, so the bridge opens that page in a background tab for a few seconds and reads the visible numbers). A site change can break a row. The row then shows **error** with the reason, and the old number stays until the next good update.
 
 ## How it works
 
@@ -48,20 +48,15 @@ Copy the text from the extension popup and send it to me. It contains no secrets
 | `add-on HTTP …` / `failed: …` | Wrong address, Tailscale off, or the add-on isn't running. |
 | `no rate_limit in ChatGPT response` / `no usage windows` | The site changed its format. Do the capture below for that site. |
 
-## What I need from you: Gemini (and any site that breaks)
+## If Gemini (or another site) stops reading correctly
 
-Gemini's usage page loads its numbers through Google's internal `batchexecute` calls, and I can't see those without your account. Capture **one** response and send it here. It takes about 3 minutes.
+Gemini is read from the page text, so a wording change on gemini.google.com/usage can break it. If the Gemini row shows **error**:
 
-1. Chrome → **gemini.google.com** → open the screen that shows your usage % / reset time.
-2. Press **F12** → **Network** tab → tick **Preserve log** → type `batchexecute` in the filter box.
-3. Close and reopen the usage screen, or reload the page and open it again, so new rows appear.
-4. Click each `batchexecute` row → **Response** tab → press **Ctrl/Cmd+F** and search for the % number shown on screen (e.g. `37`).
-5. On the row that contains it, send me **three things**:
-   - **Response:** right-click the row → *Copy → Copy response* → paste into a `.txt` file.
-   - **RPC id:** on the **Headers** tab, the Request URL contains `rpcids=XXXXXX`. Send only that value.
-   - **Request:** on the **Payload** tab, copy only the value of **`f.req`**.
-6. Also send a **screenshot** of the usage screen so I can match each number to its label.
+1. Click the bridge icon → **Gemini not working?** → **Copy Gemini usage page text**.
+2. Paste the text to me. It's only what the page shows (percentages and reset times), but skim it first in case your name or email appears.
 
-**Never send:** anything from *Request Headers* (especially `Cookie`), the `at=` value from Payload, `f.sid`, or a `.har` export. Those can contain your login.
+For Claude or ChatGPT format changes, send me the ✗ message from the popup. That's usually enough.
 
-For ChatGPT or Claude, if a format change breaks them, the same steps work. On chatgpt.com, filter for `wham/usage`. On claude.ai, filter for `usage`. Copy the **Response** only.
+## The dashboard card
+
+Each AI gets **one card** with two gauges: **Current** (the 5-hour session) and **Weekly**, each with its reset time. Copilot shows one gauge for the month. The add-on installs this card for you when you press **Build dashboard**. The first time, it asks for one Home Assistant restart (button on the setup page). Until then the AI section shows plain gauges.

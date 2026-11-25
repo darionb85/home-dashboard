@@ -27,7 +27,7 @@
 <div class="svc">
   <label><input type="checkbox" id="svc-claude" checked> Claude</label>
   <label><input type="checkbox" id="svc-chatgpt" checked> ChatGPT</label>
-  <label title="Needs a capture first"><input type="checkbox" disabled> Gemini (soon)</label>
+  <label><input type="checkbox" id="svc-gemini" checked> Gemini</label>
 </div>
 <div class="row">
   <button id="save" class="primary">Save</button>
@@ -35,6 +35,10 @@
 </div>
 <p class="muted">Runs every 15 minutes while Chrome is open. Stay logged in to claude.ai and chatgpt.com in this Chrome profile.</p>
 <pre id="out">No runs yet.</pre>
+<details><summary class="muted">Gemini not working?</summary>
+  <p class="muted">Copies the visible text of gemini.google.com/usage so you can paste it to me. It contains no passwords, but skim it for anything you'd rather not share.</p>
+  <button id="gemtext">Copy Gemini usage page text</button>
+</details>
 <script src="options.js" type="module"></script>
 </body>
 </html>

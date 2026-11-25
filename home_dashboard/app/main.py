@@ -19,7 +19,7 @@ import aiohttp
 import yaml
 from aiohttp import web
 
-from . import builder
+from . import builder, card_installer
 from .copilot import CopilotError, error_row, fetch_copilot
 from .ha import HAClient, HAError
 from .schema import SERVICES, iso, make_row, mark_stale, utcnow
@@ -63,6 +63,7 @@ class Service:
         self.last_refresh = 0.0
         self.last_build: dict = {}
         self._ingest_seen: dict[str, float] = {}
+        self.card_status: dict = {}
         self.extra_template_dirs = [Path(os.environ.get("USER_TEMPLATES", "/share/home_dashboard/templates"))]
 
     # -- usage -------------------------------------------------------------
@@ -158,6 +159,15 @@ class Service:
                 registry = await self.ha.entity_registry()
             except (HAError, aiohttp.ClientError, asyncio.TimeoutError) as exc:
                 log.warning("entity registry unavailable, using name hints: %s", exc)
+            card = await card_installer.install(self.ha)
+            if card["needs_restart"]:
+                self.store.set_flag("card_restart_pending", True)
+            if self.store.get_flag("card_restart_pending") and await card_installer.served(self.session):
+                self.store.set_flag("card_restart_pending", False)  # HA was restarted some other way
+            card["needs_restart"] = self.store.get_flag("card_restart_pending")
+            if card["ok"] and not card["needs_restart"]:
+                extras["ai_card"] = True
+            self.card_status = card
             try:
                 info = await self.ha.addon_info()
                 if info.get("slug"):
@@ -170,7 +180,8 @@ class Service:
         if push and self.ha.available:
             await self.ha.save_dashboard("home-dashboard", config.get("title", "Home"), config)
             pushed = True
-        self.last_build = {"at": iso(utcnow()), "template": template, "found": found, "pushed": pushed, "config": config}
+        self.last_build = {"at": iso(utcnow()), "template": template, "found": found, "pushed": pushed, "config": config,
+                           "card": self.card_status}
         log.info("dashboard built with template %s (%d keys found, pushed=%s)", template, len(found), pushed)
         return self.last_build
 
@@ -309,8 +320,9 @@ def make_ingress_app(svc: Service, allow_any_remote: bool = False) -> web.Applic
             "tokens": svc.store.tokens,
             "templates": builder.list_templates(svc.extra_template_dirs),
             "template": svc.options["template"],
+            "restart_pending": svc.store.get_flag("card_restart_pending"),
             "copilot_configured": bool(svc.options["github_username"] and svc.options["github_pat"]),
-            "last_build": {k: b.get(k) for k in ("at", "template", "found", "pushed")} if b else None,
+            "last_build": {k: b.get(k) for k in ("at", "template", "found", "pushed", "card")} if b else None,
         })
 
     async def set_row(request):
@@ -340,7 +352,18 @@ def make_ingress_app(svc: Service, allow_any_remote: bool = False) -> web.Applic
             return _json({"error": str(exc)}, 400)
         except (HAError, aiohttp.ClientError, asyncio.TimeoutError) as exc:
             return _json({"error": f"Home Assistant refused: {exc}"}, 502)
-        return _json({k: result[k] for k in ("at", "template", "found", "pushed")})
+        return _json({k: result.get(k) for k in ("at", "template", "found", "pushed", "card")})
+
+    async def restart_ha(_request):
+        try:
+            svc.store.set_flag("card_restart_pending", False)
+            await svc.ha.call_service("homeassistant", "restart")
+        except (HAError, aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            # a restart often drops the connection mid-call; that still means it's restarting
+            if isinstance(exc, HAError):
+                svc.store.set_flag("card_restart_pending", True)
+                return _json({"error": str(exc)}, 502)
+        return _json({"ok": True})
 
     async def dashboard_yaml(request):
         template = request.query.get("template")
@@ -363,6 +386,7 @@ def make_ingress_app(svc: Service, allow_any_remote: bool = False) -> web.Applic
     app.router.add_post("/api/build", build)
     app.router.add_get("/api/dashboard.yaml", dashboard_yaml)
     app.router.add_post("/api/tokens/rotate", rotate)
+    app.router.add_post("/api/restart-ha", restart_ha)
     add_shared_assets(app)
     return app
 
