@@ -38,7 +38,7 @@ Adding a device later? Open **Dashboard setup** → **Build dashboard** again an
 | Tesla Wall Connector | Tesla Wall Connector (built in, local) | ✅ today |
 | EcoFlow Delta 3 Ultra Plus | EcoFlow Cloud (Marketplace), Bluetooth as backup | ⚠️ best effort |
 | Vivosun GrowHub E42A | `vivosun_growhub` (Marketplace, unofficial) | ✅ today |
-| AI usage | Copilot live (add-on); Claude + ChatGPT live via the Chrome [AI Usage Bridge](docs/ai-usage-live.md); Grok by hand | ✅ |
+| AI usage | Copilot live (add-on); Claude + ChatGPT live via the [AI Usage Bridge](docs/ai-usage-live.md) in an [always-on browser](docs/always-on-browser.md); Grok by hand | ✅ |
 | AI usage: Gemini | Bridge, once one capture is sent ([how](docs/ai-usage-live.md#what-i-need-from-you-gemini-and-any-site-that-breaks)) | 🕒 waiting on capture |
 | Tesla solar + car | Tesla Fleet | 🕒 next build: [docs/tesla-fleet.md](docs/tesla-fleet.md) |
 | iCloud Reminders/Notes | iOS Shortcut → HA | 🕒 later: [docs/icloud-shortcut.md](docs/icloud-shortcut.md) |
@@ -75,6 +75,7 @@ home_dashboard/              the add-on
   tests/                     pytest: JSON shape, Copilot parser (mocked), builder, API
 widgets/                     Scriptable (iOS) + KWGT (Android)
 bridge/                      Chrome extension: live Claude/ChatGPT usage → add-on /ingest
+browser/                     always-on Chromium (Proxmox LXC + Docker) that runs the bridge 24/7
 docs/                        install, integrations, templates, Tesla, iCloud, sharing
 design/                      Step 2 Claude live row (design only)
 ```

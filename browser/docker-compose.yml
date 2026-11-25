@@ -1,0 +1,23 @@
+# Always-on Chromium for the AI Usage Bridge (runs in a Proxmox LXC).
+# Open https://<lxc-ip>:3001 to see/log in to the browser. LAN only: never port-forward this.
+services:
+  chromium:
+    image: lscr.io/linuxserver/chromium:latest
+    container_name: ai-usage-browser
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/New_York}
+      - CUSTOM_USER=${CUSTOM_USER}
+      - PASSWORD=${PASSWORD}
+      # tries to auto-load the bridge; if it doesn't appear, load /bridge by hand (see docs)
+      - CHROME_CLI=--load-extension=/bridge chrome://extensions
+    volumes:
+      - ./config:/config                 # browser profile = your logins; keep private
+      - ./repo/bridge:/bridge:ro         # the AI Usage Bridge extension from this repo
+    ports:
+      - 3001:3001                        # HTTPS desktop (self-signed cert)
+    shm_size: "1gb"
+    restart: unless-stopped

@@ -17,7 +17,9 @@ Home Dashboard add-on → sensor.ai_usage_claude / _chatgpt → gauges + phone w
 - The headline % is your **tightest** limit (session or weekly, whichever is higher). The other one is an attribute on the sensor (`session_pct`, `weekly_pct`, plus `plan` for ChatGPT).
 - If Chrome is closed for a while, the row turns **stale**. It turns **ok** again on the next run.
 
-## Install (5 minutes)
+> **Recommended:** run the bridge in the [always-on browser](always-on-browser.md) on your Proxmox server so it works when your computer is off. The steps below are for running it in your everyday Chrome instead.
+
+## Install in your own Chrome (5 minutes)
 
 1. Download this repo: GitHub → **Code → Download ZIP**, and unzip it. Or use `ai-usage-bridge.zip` from the chat.
 2. Chrome → `chrome://extensions` → turn on **Developer mode** (top right) → **Load unpacked** → choose the **`bridge`** folder.
