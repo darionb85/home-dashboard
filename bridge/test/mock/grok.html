@@ -1,0 +1,15 @@
+<!DOCTYPE html><html><body>
+<header><button aria-label="Open user menu" id="avatar">D</button></header>
+<main><h1>What do you want to know?</h1><p>Grok home page placeholder text for the mock, long enough to count as rendered.</p></main>
+<div id="menu" hidden><div role="menuitem" id="settings">Settings</div><div role="menuitem">Help</div></div>
+<div id="modal" hidden>
+  <div role="tab">Account</div><div role="tab" id="usageTab">Usage</div><div role="tab">Billing</div>
+  <section id="panel"></section>
+</div>
+<script>
+avatar.onclick = () => (menu.hidden = false);
+settings.onclick = () => { menu.hidden = true; modal.hidden = false; panel.innerText = "Account settings"; };
+usageTab.onclick = () => setTimeout(() => {  // loads asynchronously like the real app
+  panel.innerText = "Usage limits\nWeekly usage\n100% used\nResets Thursday at 9:00 AM\nChat\n71%\nImagine\n22%\nExtra Usage Credits\n$4.20";
+}, 1200);
+</script></body></html>

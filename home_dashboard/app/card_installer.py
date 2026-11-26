@@ -11,7 +11,7 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 CARD_SRC = Path(__file__).parent / "static" / "ai-usage-card.js"
-CARD_VERSION = "0.3.1"
+CARD_VERSION = "0.3.2"
 URL_PATH = "/local/home-dashboard/ai-usage-card.js"
 CONFIG_ROOTS = ("/homeassistant", "/config")
 

@@ -1,6 +1,6 @@
 # Live Claude, ChatGPT, Gemini and Grok usage
 
-> ⚠️ **Unofficial.** None of these services offer a public "usage %" API for consumer plans. The bridge reads the same data their own usage pages show: claude.ai/settings/usage, chatgpt.com/codex/settings/usage, grok.com's rate-limit check (the same one its model picker uses) and gemini.google.com/usage (Gemini has no data feed, so the bridge opens that page in a background tab for a few seconds and reads the visible numbers). A site change can break a row. The row then shows **error** with the reason, and the old number stays until the next good update.
+> ⚠️ **Unofficial.** None of these services offer a public "usage %" API for consumer plans. The bridge reads the same data their own usage pages show: claude.ai/settings/usage, chatgpt.com/codex/settings/usage, grok.com Settings → Usage (weekly pool and Extra Usage Credits) and gemini.google.com/usage (Gemini has no data feed, so the bridge opens that page in a background tab for a few seconds and reads the visible numbers). A site change can break a row. The row then shows **error** with the reason, and the old number stays until the next good update.
 
 ## How it works
 
@@ -48,11 +48,11 @@ Copy the text from the extension popup and send it to me. It contains no secrets
 | `add-on HTTP …` / `failed: …` | Wrong address, Tailscale off, or the add-on isn't running. |
 | `no rate_limit in ChatGPT response` / `no usage windows` | The site changed its format. Do the capture below for that site. |
 
-## If Gemini (or another site) stops reading correctly
+## If Gemini or Grok stops reading correctly
 
-Gemini is read from the page text, so a wording change on gemini.google.com/usage can break it. If the Gemini row shows **error**:
+Gemini and Grok are read from their usage pages' text (the bridge opens them in a hidden tab; for Grok it clicks Settings → Usage), so a wording change can break them. If one shows **error** or a wrong number:
 
-1. Click the bridge icon → **Gemini not working?** → **Copy Gemini usage page text**.
+1. Click the bridge icon → **Gemini or Grok not reading right?** → **Copy Gemini usage text** or **Copy Grok usage text**.
 2. Paste the text to me. It's only what the page shows (percentages and reset times), but skim it first in case your name or email appears.
 
 For Claude or ChatGPT format changes, send me the ✗ message from the popup. That's usually enough.

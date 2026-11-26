@@ -168,18 +168,36 @@ export function parseGeminiText(text, now = new Date()) {
   return { pct_used: top.pct, resets_at: top.resets_at, details };
 }
 
-// ---------- Grok (grok.com) ----------
-// POST https://grok.com/rest/rate-limits {requestKind: "DEFAULT", modelName}
-// -> {windowSizeSeconds, remainingQueries, totalQueries, waitTimeSeconds?}
-export function parseGrokRateLimit(data, nowMs = Date.now()) {
-  const total = num(data && data.totalQueries), remaining = num(data && data.remainingQueries);
-  if (total == null || remaining == null || total <= 0) throw new ParseError("no rate limit in Grok response");
-  const pct = Math.round(((total - remaining) / total) * 1000) / 10;
-  const wait = num(data.waitTimeSeconds);
-  const win = num(data.windowSizeSeconds);
-  const resets_at = wait != null && wait > 0 ? new Date(nowMs + wait * 1000).toISOString() : null;
-  const details = { window: "session", session_pct: pct, session_resets_at: resets_at,
-                    queries_left: remaining, queries_total: total };
-  if (!resets_at && win != null) details.session_reset_text = `rolling ${Math.round(win / 3600 * 10) / 10}h window`;
+// ---------- Grok (grok.com Settings -> Usage) ----------
+// Since mid-2026 paid Grok has one weekly pool (% used, weekly reset, optional
+// Extra Usage Credits). There's no JSON we can call, so we read the Usage tab's text, e.g.
+//   "Usage limits  Weekly usage  100% used  Resets Thursday at 9:00 AM ... Extra Usage Credits $4.20"
+const GROK_PRODUCTS = /^(api|build|chat|imagine|voice|video|image|grok bot)\b/i;
+
+export function parseGrokUsageText(text, now = new Date()) {
+  if (!text || typeof text !== "string") throw new ParseError("empty Grok page");
+  const t = text.replace(/\r/g, "");
+  if (/(sign in|log in|create account)/i.test(t) && !/%/.test(t)) throw new ParseError("grok.com: signed out. Open it once and log in.");
+  // the overall pool % is the first % after the weekly/usage heading that isn't a per-product line
+  const start = Math.max(0, t.search(/weekly|usage limits?|usage/i));
+  const lines = t.slice(start).split("\n").map((l) => l.trim()).filter(Boolean);
+  let pct = null;
+  for (let i = 0; i < lines.length && pct === null; i++) {
+    const m = lines[i].match(/(\d{1,3}(?:\.\d+)?)\s*%\s*(used|left|remaining|available)?/i);
+    if (!m) continue;
+    const label = (lines[i].slice(0, m.index) || lines[i - 1] || "").trim();
+    if (GROK_PRODUCTS.test(label)) continue;
+    pct = parseFloat(m[1]);
+    if (m[2] && /left|remaining|available/i.test(m[2])) pct = Math.max(0, 100 - pct);
+  }
+  if (pct === null) throw new ParseError("Grok usage page text not recognized (no weekly %)");
+  const rm = t.match(/(?:resets?|renews?|refreshes)\s+(?:on\s+|at\s+)?([^\n%]{2,60})/i);
+  const reset_text = rm ? rm[1].trim() : null;
+  const resets_at = parseResetPhrase(reset_text, now);
+  const details = { window: "weekly", weekly_pct: pct, weekly_resets_at: resets_at };
+  if (!resets_at && reset_text) details.weekly_reset_text = reset_text;
+  const cm = t.match(/(?:extra usage credits?|usage credits?|additional usage credits?|credits? balance)[^\n$]{0,40}?\n?\s*\$\s?(\d+(?:,\d{3})*(?:\.\d{1,2})?)/i)
+        || t.match(/\$\s?(\d+(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:in\s+)?(?:extra\s+)?(?:usage\s+)?credits?/i);
+  if (cm) details.credits = `$${cm[1]}`;
   return { pct_used: pct, resets_at, details };
 }

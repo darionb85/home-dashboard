@@ -42,13 +42,15 @@ $("run").onclick = async () => {
   show(res.error ? res : { at: new Date().toISOString(), results: res.results });
 };
 
-$("gemtext").onclick = async () => {
-  $("out").textContent = "Opening gemini.google.com/usage…";
-  const res = await chrome.runtime.sendMessage({ type: "gemini-text" });
+async function copyPage(type, label) {
+  $("out").textContent = `Opening ${label}…`;
+  const res = await chrome.runtime.sendMessage({ type });
   if (res.error) { $("out").textContent = res.error; return; }
   try { await navigator.clipboard.writeText(res.text); $("out").textContent = "Copied. Paste it to Claude."; }
   catch { $("out").textContent = res.text; }
-};
+}
+$("gemtext").onclick = () => copyPage("gemini-text", "gemini.google.com/usage");
+$("groktext").onclick = () => copyPage("grok-text", "grok.com Settings → Usage");
 
 // show the running version so it's obvious when an update landed
 document.querySelector("h1").textContent += ` ${chrome.runtime.getManifest().version}`;

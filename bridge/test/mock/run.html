@@ -1,0 +1,16 @@
+<!DOCTYPE html><html><body><pre id="out">running</pre>
+<iframe id="f" src="grok.html" style="width:800px;height:400px"></iframe>
+<script type="module">
+import { grokUsagePageText } from "../../grok-page.js";
+import { parseGrokUsageText } from "../../parsers.js";
+const f = document.getElementById("f");
+f.onload = async () => {
+  // run the injected function against the mock page's document
+  const run = new f.contentWindow.Function("return (" + grokUsagePageText.toString() + ")()");
+  try {
+    const text = await run();
+    const r = parseGrokUsageText(text, new Date("2026-11-25T15:00:00Z"));
+    document.getElementById("out").textContent = "RESULT " + JSON.stringify(r);
+  } catch (e) { document.getElementById("out").textContent = "ERROR " + e.message; }
+};
+</script></body></html>

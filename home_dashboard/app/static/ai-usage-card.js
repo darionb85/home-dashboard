@@ -9,7 +9,7 @@
  * weekly_resets_at, status. With no session/weekly attributes it shows the
  * sensor state as a single gauge (e.g. Copilot's monthly credits).
  */
-const CARD_VERSION = "0.3.1";
+const CARD_VERSION = "0.3.2";
 const HAS_WEEKLY = ["claude", "chatgpt", "gemini"];
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -68,7 +68,8 @@ class AiUsageCard extends HTMLElement {
     const out = [];
     const s = num(a.session_pct), w = num(a.weekly_pct);
     if (s !== null) out.push({ label: "Current", pct: s, reset: fmtReset(a.session_resets_at, a.session_reset_text) });
-    if (w !== null) out.push({ label: "Weekly", pct: w, reset: fmtReset(a.weekly_resets_at, a.weekly_reset_text) });
+    const credits = a.credits ? ` \u00b7 ${a.credits} credits` : "";
+    if (w !== null) out.push({ label: "Weekly", pct: w, reset: fmtReset(a.weekly_resets_at, a.weekly_reset_text) + credits });
     else if (s !== null && HAS_WEEKLY.some((k) => this._config.entity.endsWith(`_${k}`)))
       out.push({ label: "Weekly", pct: null, reset: "no weekly number received" });
     if (!out.length) {

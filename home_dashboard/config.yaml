@@ -1,5 +1,5 @@
 name: Home Dashboard
-version: "0.3.1"
+version: "0.3.2"
 slug: home_dashboard
 description: One-click dashboard builder + AI usage service (usage.json for phone widgets)
 url: https://github.com/darionb85/home-dashboard

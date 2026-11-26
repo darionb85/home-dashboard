@@ -1,7 +1,8 @@
 // AI Usage Bridge: every 15 min (while Chrome is open) read usage with your existing
 // logins and POST only {service, pct_used, resets_at, details} to the add-on.
 // Session cookies and tokens never leave the browser and are never logged or stored.
-import { pickClaudeOrg, parseClaudeUsage, parseChatgptSession, parseChatgptUsage, parseGeminiText, parseGrokRateLimit } from "./parsers.js";
+import { pickClaudeOrg, parseClaudeUsage, parseChatgptSession, parseChatgptUsage, parseGeminiText, parseGrokUsageText } from "./parsers.js";
+import { grokUsagePageText } from "./grok-page.js";
 
 const PERIOD_MIN = 15;
 const TIMEOUT_MS = 20000;
@@ -28,28 +29,29 @@ const FETCHERS = {
     return parseGeminiText(await readGeminiUsagePage());
   },
   async grok() {
-    // model names change over time; use the first one grok.com answers for
-    let last = "no Grok model answered";
-    for (const modelName of GROK_MODELS) {
-      try {
-        const data = await getJSON("https://grok.com/rest/rate-limits", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requestKind: "DEFAULT", modelName }),
-        });
-        const r = parseGrokRateLimit(data);
-        r.details.model = modelName;
-        return r;
-      } catch (e) {
-        last = String(e.message || e);
-        if (/signed out/.test(last)) throw e;
-      }
-    }
-    throw new Error(last);
+    return parseGrokUsageText(await readGrokUsagePage());
   },
 };
 
-const GROK_MODELS = ["grok-4", "grok-4-auto", "grok-3", "grok-4-fast"];
+// Grok's weekly pool lives in Settings -> Usage (a window inside grok.com), so open grok.com
+// in a background tab, let grok-page.js click through to Usage, read the text, close the tab.
+export async function readGrokUsagePage() {
+  const tab = await chrome.tabs.create({ url: "https://grok.com/", active: false });
+  try {
+    for (let i = 0; i < 20; i++) {
+      await sleep(1000);
+      const t = await chrome.tabs.get(tab.id);
+      if (t.url && /(accounts\.x\.ai|x\.com\/i\/flow\/login|\/sign-?in)/.test(t.url)) throw new Error("grok.com: signed out. Open it once and log in.");
+      if (t.status === "complete") break;
+    }
+    const [res] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: grokUsagePageText });
+    const text = (res && res.result) || "";
+    if (!text) throw new Error("grok.com didn't load");
+    return text;
+  } finally {
+    chrome.tabs.remove(tab.id).catch(() => {});
+  }
+}
 
 // Unpacked extensions don't reload themselves when their files change on disk.
 // The always-on browser's sync container refreshes the files hourly; this picks them up.
@@ -137,6 +139,10 @@ chrome.alarms.onAlarm.addListener(async (a) => {
 });
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg && msg.type === "run") { runAll().then(reply); return true; }
+  if (msg && msg.type === "grok-text") {
+    readGrokUsagePage().then((text) => reply({ text }), (e) => reply({ error: String(e.message || e) }));
+    return true;
+  }
   if (msg && msg.type === "gemini-text") {
     readGeminiUsagePage().then((text) => reply({ text }), (e) => reply({ error: String(e.message || e) }));
     return true;
